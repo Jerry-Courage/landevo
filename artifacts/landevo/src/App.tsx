@@ -1,3 +1,4 @@
+import React from "react";
 import { Route, Switch, Router as WouterRouter } from 'wouter';
 import Dashboard from '@/pages/dashboard';
 import Login from '@/pages/login';
@@ -12,20 +13,15 @@ import Settings from '@/pages/settings';
 import Admin from '@/pages/admin';
 import NotFound from '@/pages/not-found';
 
-function Home() {
-  return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gray-50">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Replit Agent is building...
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          Your app will appear here once it's ready.
-        </p>
-      </div>
-    </div>
-  );
-}
+// Buyer Pages
+import BuyerHome from '@/pages/buyer/home';
+import BuyerBrowse from '@/pages/buyer/browse';
+import BuyerPropertyDetail from '@/pages/buyer/property-detail';
+import BuyerOffers from '@/pages/buyer/offers';
+import BuyerEscrow from '@/pages/buyer/escrow';
+import BuyerMessages from '@/pages/buyer/messages';
+import BuyerNotifications from '@/pages/buyer/notifications';
+import BuyerSettings from '@/pages/buyer/settings';
 
 function Router() {
   return (
@@ -35,6 +31,8 @@ function Router() {
         window.location.href = '/dashboard';
         return null;
       }} />
+      
+      {/* Agent Routes */}
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/marketplace" component={Marketplace} />
       <Route path="/marketplace/:id" component={PropertyDetail} />
@@ -45,6 +43,17 @@ function Router() {
       <Route path="/notifications" component={Notifications} />
       <Route path="/settings" component={Settings} />
       <Route path="/admin" component={Admin} />
+      
+      {/* Buyer Routes */}
+      <Route path="/buyer" component={BuyerHome} />
+      <Route path="/buyer/browse" component={BuyerBrowse} />
+      <Route path="/buyer/property/:id" component={BuyerPropertyDetail} />
+      <Route path="/buyer/offers" component={BuyerOffers} />
+      <Route path="/buyer/escrow" component={BuyerEscrow} />
+      <Route path="/buyer/messages" component={BuyerMessages} />
+      <Route path="/buyer/notifications" component={BuyerNotifications} />
+      <Route path="/buyer/settings" component={BuyerSettings} />
+
       <Route component={NotFound} />
     </Switch>
   );
