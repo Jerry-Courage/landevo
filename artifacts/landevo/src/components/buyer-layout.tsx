@@ -10,7 +10,6 @@ const NAV_ITEMS = [
   { path: "/buyer/offers", label: "My Offers", icon: Heart },
   { path: "/buyer/escrow", label: "Escrow Tracker", icon: ShieldCheck },
   { path: "/buyer/messages", label: "Messages", icon: MessageSquare },
-  { path: "/buyer/notifications", label: "Notifications", icon: Bell },
   { path: "/buyer/settings", label: "Settings", icon: Settings },
 ];
 
@@ -55,7 +54,7 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-medium leading-none mb-1 truncate">{user?.name ?? "—"}</span>
-              <span className="text-[10px] text-sidebar-foreground/60 leading-none">Buyer Account</span>
+              <span className="text-[10px] text-sidebar-foreground/60 leading-none">Buyer</span>
             </div>
           </div>
           <button
@@ -71,16 +70,16 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
       {/* Main Area */}
       <div className="flex-1 flex flex-col min-w-0 bg-background overflow-hidden">
         {/* Header */}
-        <div className="h-16 border-b border-border flex items-center justify-between px-6 gap-4 flex-shrink-0 bg-card/50">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <span>Welcome back,</span>
-            <span className="text-foreground">{user?.name?.split(" ")[0] ?? "—"}</span>
+        <div className="h-14 border-b border-border flex items-center justify-between px-6 gap-4 flex-shrink-0 bg-card/50">
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <span>Welcome,</span>
+            <span className="font-semibold text-foreground">{user?.name?.split(" ")[0] ?? "—"}</span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <Link href="/buyer/notifications">
               <button className="relative p-2 rounded-md hover:bg-muted transition-colors">
                 <Bell className="w-4 h-4 text-muted-foreground" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full" />
+                <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-primary rounded-full" />
               </button>
             </Link>
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center font-bold text-xs text-primary-foreground">

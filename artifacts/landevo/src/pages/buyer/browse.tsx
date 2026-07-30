@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Map, List, MapPin, ShieldCheck, Check, Clock, ChevronDown, Heart } from "lucide-react";
+import { Map, List, MapPin, ShieldCheck, Check, ChevronDown, Heart } from "lucide-react";
 import { mockListings, formatCurrency } from "@/lib/mock-data";
 import { Link } from "wouter";
 
@@ -12,37 +12,35 @@ export default function BuyerBrowse() {
   return (
     <BuyerLayout>
       <div className="flex flex-col md:flex-row h-full w-full">
-        {/* Left Sidebar - Filters */}
-        <div className="w-full md:w-[280px] flex-shrink-0 bg-card border-r border-border p-6 overflow-y-auto">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-sm tracking-widest text-muted-foreground">REFINE SEARCH</h3>
-            <button className="text-xs text-primary font-medium hover:underline">Clear All</button>
+
+        {/* Left Sidebar – Filters */}
+        <div className="w-full md:w-[240px] flex-shrink-0 bg-card border-r border-border p-5 overflow-y-auto">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-bold text-sm text-foreground">Filters</h3>
+            <button className="text-xs text-primary font-medium hover:underline">Clear</button>
           </div>
 
-          <div className="space-y-8">
+          <div className="space-y-6">
             {/* Price Range */}
             <div>
-              <h4 className="font-semibold text-sm mb-3">Price Range (Million ₦)</h4>
-              <div className="flex items-center gap-2 mb-4">
-                <Input type="number" placeholder="Min" defaultValue={1} className="h-9 text-sm" />
-                <span className="text-muted-foreground">-</span>
-                <Input type="number" placeholder="Max" defaultValue={1200} className="h-9 text-sm" />
-              </div>
-              <div className="h-1.5 w-full bg-secondary rounded-full overflow-hidden">
-                <div className="h-full bg-primary w-2/3 ml-[10%] rounded-full"></div>
+              <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-3">Price (Million ₦)</h4>
+              <div className="flex items-center gap-2">
+                <Input type="number" placeholder="Min" defaultValue={1} className="h-8 text-sm" />
+                <span className="text-muted-foreground text-sm">–</span>
+                <Input type="number" placeholder="Max" defaultValue={1200} className="h-8 text-sm" />
               </div>
             </div>
 
             {/* Land Usage */}
             <div>
-              <h4 className="font-semibold text-sm mb-3">Land Usage Type</h4>
-              <div className="space-y-2.5">
+              <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-3">Land Usage</h4>
+              <div className="space-y-2">
                 {['Residential', 'Commercial', 'Industrial', 'Agricultural', 'Institutional'].map((type, i) => (
                   <label key={type} className="flex items-center gap-3 cursor-pointer group">
                     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${i < 2 ? 'bg-primary border-primary text-primary-foreground' : 'border-input bg-background group-hover:border-primary/50'}`}>
                       {i < 2 && <Check className="w-3 h-3" />}
                     </div>
-                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{type}</span>
+                    <span className="text-sm text-foreground group-hover:text-primary transition-colors">{type}</span>
                   </label>
                 ))}
               </div>
@@ -50,134 +48,106 @@ export default function BuyerBrowse() {
 
             {/* Authority */}
             <div>
-              <h4 className="font-semibold text-sm mb-3">Certifying Authority</h4>
-              <div className="space-y-2.5">
+              <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-3">Certifying Authority</h4>
+              <div className="space-y-2">
                 {['Lagos State Land Bureau', 'Ogun Land Registry', 'Federal Land Commission', 'FCT Administration'].map((type, i) => (
                   <label key={type} className="flex items-center gap-3 cursor-pointer group">
                     <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${i === 0 ? 'bg-primary border-primary text-primary-foreground' : 'border-input bg-background group-hover:border-primary/50'}`}>
                       {i === 0 && <Check className="w-3 h-3" />}
                     </div>
-                    <span className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">{type}</span>
+                    <span className="text-sm text-foreground group-hover:text-primary transition-colors">{type}</span>
                   </label>
                 ))}
               </div>
             </div>
-
-            {/* Info Box */}
-            <div className="bg-[#E6F4EA] border border-[#A8DAB5] rounded-lg p-4 mt-8">
-              <div className="flex items-center gap-2 mb-2">
-                <ShieldCheck className="w-5 h-5 text-primary" />
-                <h5 className="font-bold text-primary text-sm">INSTITUTIONAL GUARANTEE</h5>
-              </div>
-              <p className="text-xs text-primary/80 leading-relaxed font-medium mb-3">
-                All listings on this platform have undergone a multi-stage verification process by the relevant State and Federal Land Commissions.
-              </p>
-              <a href="#" className="text-xs font-bold text-primary hover:underline">Learn about verification →</a>
-            </div>
           </div>
         </div>
 
-        {/* Right Main Content */}
-        <div className="flex-1 flex flex-col min-w-0 bg-background overflow-y-auto">
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-w-0 overflow-y-auto">
           <div className="p-6 md:p-8 max-w-6xl mx-auto w-full">
-            
-            <div className="mb-6">
-              <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Browse Verified Properties</h1>
-              <p className="text-muted-foreground text-sm">Find securely vetted land for your next big project.</p>
-            </div>
 
-            {/* Active filter chips / result count */}
-            <div className="flex items-center justify-between mb-3">
-              <p className="text-sm font-semibold text-muted-foreground">
-                Showing <span className="text-foreground font-bold">126 verified properties</span>
+            {/* Page Header */}
+            <div className="mb-5">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">Browse Properties</h1>
+              <p className="text-muted-foreground text-sm mt-1">
+                Showing <span className="font-semibold text-foreground">126 verified properties</span>
               </p>
+            </div>
+
+            {/* Toolbar */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
               <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
-                  Lagos State <button className="ml-1 hover:text-destructive">×</button>
-                </span>
-                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
-                  Residential <button className="ml-1 hover:text-destructive">×</button>
-                </span>
-              </div>
-            </div>
-
-            {/* Filter Bar */}
-            <div className="bg-card border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 shadow-sm">
-              <div className="flex items-center gap-3">
                 <div className="flex bg-muted p-1 rounded-md">
-                  <button className="px-3 py-1.5 bg-background shadow-sm rounded text-xs font-semibold flex items-center gap-2">
-                    <List className="w-4 h-4" /> List
+                  <button className="px-3 py-1.5 bg-background shadow-sm rounded text-xs font-semibold flex items-center gap-1.5">
+                    <List className="w-3.5 h-3.5" /> List
                   </button>
-                  <button className="px-3 py-1.5 text-muted-foreground rounded text-xs font-semibold flex items-center gap-2 hover:text-foreground">
-                    <Map className="w-4 h-4" /> Map
+                  <button className="px-3 py-1.5 text-muted-foreground rounded text-xs font-semibold flex items-center gap-1.5 hover:text-foreground">
+                    <Map className="w-3.5 h-3.5" /> Map
                   </button>
                 </div>
-                <div className="h-6 w-px bg-border mx-1"></div>
-                <Button variant="outline" size="sm" className="text-xs h-9 font-semibold">
-                  Sort: Newest First <ChevronDown className="w-3 h-3 ml-2"/>
-                </Button>
-                <Button variant="outline" size="sm" className="text-xs h-9 font-semibold hidden sm:flex">
-                  Lagos State <ChevronDown className="w-3 h-3 ml-2"/>
+                <Button variant="outline" size="sm" className="text-xs h-8 font-semibold">
+                  Newest First <ChevronDown className="w-3 h-3 ml-1.5" />
                 </Button>
               </div>
-
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 cursor-pointer hidden md:flex">
-                  <div className="relative w-8 h-4 bg-primary rounded-full transition-colors">
-                    <div className="absolute right-1 top-0.5 w-3 h-3 bg-white rounded-full transition-transform"></div>
-                  </div>
-                  <span className="text-xs font-semibold">Verified Only</span>
-                </label>
-                <div className="relative">
-                  <input type="text" placeholder="Search..." className="h-9 rounded-md border pl-3 pr-8 text-sm w-48 focus:outline-none focus:ring-1 focus:ring-primary" />
-                </div>
+              <div className="relative w-full sm:w-52">
+                <input
+                  type="text"
+                  placeholder="Search properties..."
+                  className="h-8 w-full rounded-md border pl-3 pr-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                />
               </div>
             </div>
 
-            {/* Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
+            {/* Active filter chips */}
+            <div className="flex items-center gap-2 mb-5 flex-wrap">
+              <span className="text-xs font-semibold text-muted-foreground">Active filters:</span>
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
+                Lagos State <button className="ml-1 hover:text-destructive">×</button>
+              </span>
+              <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
+                Residential <button className="ml-1 hover:text-destructive">×</button>
+              </span>
+            </div>
+
+            {/* Property Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-8">
               {mockListings.map((listing, i) => (
                 <Card key={listing.id} className="overflow-hidden hover:shadow-lg transition-all group flex flex-col h-full border-border/60">
                   <Link href={`/buyer/property/${listing.id}`}>
                     <div className="aspect-[4/3] bg-muted relative overflow-hidden cursor-pointer">
-                      <div className={`absolute inset-0 bg-gradient-to-br ${i % 3 === 0 ? 'from-teal-900 to-slate-800' : i % 3 === 1 ? 'from-slate-800 to-green-900' : 'from-slate-700 to-emerald-900'} group-hover:scale-105 transition-transform duration-500`}></div>
-                      <div className="absolute inset-0 p-4 flex flex-col justify-between">
-                        <div className="flex justify-between items-start">
-                          {listing.status === "Verified" ? (
-                            <Badge variant="success" className="bg-green-500 text-white border-none shadow-sm backdrop-blur-md bg-opacity-90 font-bold tracking-wide text-[10px] px-2 py-1 uppercase">
-                              <ShieldCheck className="w-3 h-3 mr-1" /> Verified
-                            </Badge>
-                          ) : (
-                            <Badge variant="warning" className="bg-amber-500 text-white border-none shadow-sm backdrop-blur-md bg-opacity-90 font-bold tracking-wide text-[10px] px-2 py-1 uppercase">
-                              Pending
-                            </Badge>
-                          )}
-                        </div>
+                      <div className={`absolute inset-0 bg-gradient-to-br ${i % 3 === 0 ? 'from-teal-900 to-slate-800' : i % 3 === 1 ? 'from-slate-800 to-green-900' : 'from-slate-700 to-emerald-900'} group-hover:scale-105 transition-transform duration-500`} />
+                      <div className="absolute top-3 left-3">
+                        {listing.status === "Verified" ? (
+                          <Badge className="bg-green-500 text-white border-none shadow-sm font-bold text-[10px] px-2 py-1 hover:bg-green-500">
+                            <ShieldCheck className="w-3 h-3 mr-1" /> Verified
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-amber-500 text-white border-none shadow-sm font-bold text-[10px] px-2 py-1 hover:bg-amber-500">
+                            Pending
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </Link>
-                  <CardContent className="p-5 flex flex-col flex-1">
-                    <div className="mb-3">
-                      <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase mb-1">{listing.type}</p>
-                      <Link href={`/buyer/property/${listing.id}`}>
-                        <h3 className="font-bold text-lg leading-tight line-clamp-1 group-hover:text-primary transition-colors cursor-pointer">{listing.name}</h3>
-                      </Link>
-                    </div>
-                    
+                  <CardContent className="p-4 flex flex-col flex-1">
+                    <p className="text-xs font-bold tracking-wider text-muted-foreground uppercase mb-1">{listing.type}</p>
+                    <Link href={`/buyer/property/${listing.id}`}>
+                      <h3 className="font-bold text-base leading-tight line-clamp-1 group-hover:text-primary transition-colors cursor-pointer mb-2">{listing.name}</h3>
+                    </Link>
                     <div className="flex items-center text-sm text-muted-foreground mb-4">
-                      <MapPin className="w-4 h-4 mr-1.5 flex-shrink-0" />
-                      <span className="line-clamp-1">{listing.location} &bull; {listing.size}</span>
+                      <MapPin className="w-3.5 h-3.5 mr-1.5 flex-shrink-0" />
+                      <span className="line-clamp-1">{listing.location} · {listing.size}</span>
                     </div>
-
-                    <div className="mt-auto pt-4 flex flex-col gap-3">
-                      <p className="font-bold text-xl text-foreground">{formatCurrency(listing.value)}</p>
-                      <div className="flex gap-2 w-full">
-                        <Button variant="outline" className="flex-1 text-xs font-bold gap-2">
-                          <Heart className="w-4 h-4" /> Save
+                    <div className="mt-auto pt-3 border-t flex items-center justify-between gap-2">
+                      <p className="font-bold text-lg">{formatCurrency(listing.value)}</p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="text-xs font-bold h-8 px-3 gap-1.5">
+                          <Heart className="w-3.5 h-3.5" /> Save
                         </Button>
-                        <Link href={`/buyer/property/${listing.id}`} className="flex-1">
-                          <Button className="w-full text-xs font-bold bg-primary hover:bg-primary/90">
-                            Make Offer
+                        <Link href={`/buyer/property/${listing.id}`}>
+                          <Button size="sm" className="text-xs font-bold h-8 px-3 bg-primary hover:bg-primary/90">
+                            Offer
                           </Button>
                         </Link>
                       </div>
@@ -187,36 +157,14 @@ export default function BuyerBrowse() {
               ))}
             </div>
 
-            {/* Recently Verified Near You */}
-            <div className="mb-8 p-6 bg-card border rounded-xl shadow-sm">
-              <div className="flex items-center gap-2 mb-4">
-                <Clock className="w-4 h-4 text-primary" />
-                <h3 className="font-bold text-sm">Recently Verified Near You</h3>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                {mockListings.slice(0, 3).map((listing, i) => (
-                  <Link key={`recent-${listing.id}`} href={`/buyer/property/${listing.id}`}>
-                    <div className="flex items-center gap-3 p-3 border rounded-lg hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer group">
-                      <div className={`w-10 h-10 rounded-md flex-shrink-0 bg-gradient-to-br ${i === 0 ? 'from-teal-900 to-slate-800' : i === 1 ? 'from-slate-800 to-green-900' : 'from-slate-700 to-emerald-900'}`}></div>
-                      <div className="min-w-0">
-                        <p className="text-xs font-bold line-clamp-1 group-hover:text-primary transition-colors">{listing.name}</p>
-                        <p className="text-[10px] text-muted-foreground">{listing.location}</p>
-                        <p className="text-[10px] font-bold text-primary mt-0.5">{formatCurrency(listing.value)}</p>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </div>
-
             {/* Pagination */}
-            <div className="flex items-center justify-center gap-2 mb-16">
+            <div className="flex items-center justify-center gap-2 pb-8">
               <Button variant="outline" size="sm" className="h-9 font-semibold" disabled>Previous</Button>
               <Button variant="outline" size="sm" className="h-9 w-9 p-0 font-bold bg-primary text-primary-foreground border-primary">1</Button>
               <Button variant="outline" size="sm" className="h-9 w-9 p-0 font-semibold">2</Button>
               <Button variant="outline" size="sm" className="h-9 w-9 p-0 font-semibold">3</Button>
-              <span className="text-muted-foreground px-2">...</span>
-              <Button variant="outline" size="sm" className="h-9 font-semibold">Next Page</Button>
+              <span className="text-muted-foreground px-1">...</span>
+              <Button variant="outline" size="sm" className="h-9 font-semibold">Next</Button>
             </div>
           </div>
         </div>
