@@ -109,12 +109,58 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ error: "Invalid email or password" });
   }
 
+  if (!user.isActive) {
+    return res.status(403).json({ error: "Your account has been suspended. Please contact support." });
+  }
+
   req.session.userId = user.id;
   req.session.userRole = user.role;
 
   const { passwordHash: _pw, ...safeUser } = user;
   logger.info({ userId: user.id, role: user.role }, "User logged in");
   return res.json({ user: safeUser });
+});
+
+// POST /api/auth/change-password
+router.post("/change-password", async (req, res) => {
+  if (!req.session.userId) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+
+  const { currentPassword, newPassword } = req.body as {
+    currentPassword?: string;
+    newPassword?: string;
+  };
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: "currentPassword and newPassword are required" });
+  }
+  if (newPassword.length < 8) {
+    return res.status(400).json({ error: "New password must be at least 8 characters" });
+  }
+
+  const [user] = await db
+    .select({ id: usersTable.id, passwordHash: usersTable.passwordHash })
+    .from(usersTable)
+    .where(eq(usersTable.id, req.session.userId));
+
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!valid) {
+    return res.status(401).json({ error: "Current password is incorrect" });
+  }
+
+  const newHash = await bcrypt.hash(newPassword, 12);
+  await db
+    .update(usersTable)
+    .set({ passwordHash: newHash })
+    .where(eq(usersTable.id, user.id));
+
+  logger.info({ userId: user.id }, "Password changed");
+  return res.json({ ok: true });
 });
 
 // POST /api/auth/logout

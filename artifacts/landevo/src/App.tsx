@@ -84,16 +84,12 @@ function SystemAdminRoute({ component: Component }: { component: React.Component
 /** Root redirect: send to the right home based on role */
 function RootRedirect() {
   const { user, loading } = useAuth();
-  const [, navigate] = useLocation();
-  useEffect(() => {
-    if (loading) return;
-    if (!user) navigate('/login');
-    else if (user.role === 'buyer') navigate('/buyer');
-    else if (user.role === 'commission_admin') navigate('/commission');
-    else navigate('/dashboard');
-  }, [loading, user]);
   if (loading) return <LoadingScreen />;
-  return null;
+  if (!user) return <Redirect to="/login" />;
+  if (user.role === 'buyer') return <Redirect to="/buyer" />;
+  if (user.role === 'commission_admin') return <Redirect to="/commission" />;
+  if (user.role === 'system_admin') return <Redirect to="/admin" />;
+  return <Redirect to="/dashboard" />;
 }
 
 function Router() {
