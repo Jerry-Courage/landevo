@@ -10,8 +10,8 @@ import Transactions from '@/pages/transactions';
 import Messages from '@/pages/messages';
 import Notifications from '@/pages/notifications';
 import Settings from '@/pages/settings';
-import Admin from '@/pages/admin';
 import NotFound from '@/pages/not-found';
+import CommissionSettings from '@/pages/commission/settings';
 
 // Buyer Pages
 import BuyerHome from '@/pages/buyer/home';
@@ -75,6 +75,7 @@ function RootRedirect() {
     else if (user.role === 'commission_admin') navigate('/commission');
     else navigate('/dashboard');
   }, [loading, user]);
+  if (loading) return <LoadingScreen />;
   return null;
 }
 
@@ -94,7 +95,6 @@ function Router() {
       <Route path="/messages"          component={() => <AgentRoute component={Messages} />} />
       <Route path="/notifications"     component={() => <AgentRoute component={Notifications} />} />
       <Route path="/settings"          component={() => <AgentRoute component={Settings} />} />
-      <Route path="/admin"             component={() => <AgentRoute component={Admin} />} />
 
       {/* Buyer Routes */}
       <Route path="/buyer"                   component={() => <BuyerRoute component={BuyerHome} />} />
@@ -112,7 +112,7 @@ function Router() {
       <Route path="/commission/listings"      component={() => <CommissionRoute component={CommissionListings} />} />
       <Route path="/commission/audit"         component={() => <CommissionRoute component={CommissionAudit} />} />
       <Route path="/commission/officers"      component={() => <CommissionRoute component={CommissionOfficers} />} />
-      <Route path="/commission/settings"      component={() => <CommissionRoute component={Settings} />} />
+      <Route path="/commission/settings"      component={() => <CommissionRoute component={CommissionSettings} />} />
 
       <Route component={NotFound} />
     </Switch>

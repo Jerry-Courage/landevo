@@ -31,10 +31,6 @@ export default function Dashboard() {
             <p className="text-muted-foreground mt-1 text-sm">Monitor your property portfolio and sales performance.</p>
           </div>
           <div className="flex gap-3">
-            <Link href="/buyer">
-              <Button variant="outline" className="bg-background">Buyer View</Button>
-            </Link>
-            <Button variant="outline" className="bg-background hidden sm:flex">Download Report</Button>
             <Link href="/listings/create">
               <Button>+ New Listing</Button>
             </Link>

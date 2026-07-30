@@ -41,6 +41,8 @@ export default function Login() {
       const userRole = data?.user?.role;
       if (userRole === "buyer") {
         navigate("/buyer");
+      } else if (userRole === "commission_admin") {
+        navigate("/commission");
       } else {
         navigate("/dashboard");
       }
