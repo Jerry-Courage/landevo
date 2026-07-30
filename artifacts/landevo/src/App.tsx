@@ -1,5 +1,5 @@
-import React from "react";
-import { Route, Switch, Router as WouterRouter } from 'wouter';
+import React, { useEffect } from "react";
+import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
 import Dashboard from '@/pages/dashboard';
 import Login from '@/pages/login';
 import Marketplace from '@/pages/marketplace';
@@ -28,7 +28,8 @@ function Router() {
     <Switch>
       <Route path="/login" component={Login} />
       <Route path="/" component={() => {
-        window.location.href = '/dashboard';
+        const [, navigate] = useLocation();
+        useEffect(() => { navigate('/dashboard'); }, []);
         return null;
       }} />
       
