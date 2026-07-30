@@ -1,0 +1,1 @@
+- [Artifact registration on import](artifact-registration-import.md) — GitHub-imported artifact.toml files are not auto-registered; listArtifacts() returns empty and the proxy can't route until createArtifact is called.
