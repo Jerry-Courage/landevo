@@ -3,9 +3,11 @@ import BuyerLayout from "@/components/buyer-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Info, MapPin } from "lucide-react";
-import { formatCurrency } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/format";
 import { Link } from "wouter";
-import { useListMyOffers } from "@workspace/api-client-react";
+import { useListMyOffers, useWithdrawOffer } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getListMyOffersQueryKey } from "@workspace/api-client-react";
 
 type FilterLabel = "All" | "Accepted" | "Pending" | "Rejected" | "Withdrawn";
 
@@ -25,8 +27,17 @@ function apiStatusToDisplay(s: string): string {
 }
 
 export default function BuyerOffers() {
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<FilterLabel>("All");
   const { data: rawOffers = [] } = useListMyOffers();
+
+  const { mutate: withdraw, isPending: isWithdrawing } = useWithdrawOffer({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListMyOffersQueryKey() });
+      },
+    },
+  });
 
   const offers = rawOffers.map((o) => ({
     id:           o.id,
@@ -114,7 +125,12 @@ export default function BuyerOffers() {
                     <Button className="w-full font-bold bg-[#1B4332] hover:bg-[#1B4332]/90">View Escrow</Button>
                   </Link>
                 ) : offer.status === "PENDING" ? (
-                  <Button variant="outline" className="w-full font-bold border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive">
+                  <Button
+                    variant="outline"
+                    className="w-full font-bold border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive"
+                    disabled={isWithdrawing}
+                    onClick={() => withdraw({ offerId: offer.id })}
+                  >
                     Withdraw Offer
                   </Button>
                 ) : null}

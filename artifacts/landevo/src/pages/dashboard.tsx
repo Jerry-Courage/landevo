@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowUpRight, ArrowDownRight, TrendingUp, Filter, MoreHorizontal, ShieldCheck, Clock, AlertTriangle } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { formatCurrency } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/format";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
 import { useGetAgentDashboard, useListListings } from "@workspace/api-client-react";

@@ -1,17 +1,78 @@
-import React from "react";
+import React, { useState } from "react";
 import AppLayout from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ChevronRight, MapPin, ShieldCheck, Ruler, Calendar, CheckCircle2, Lock, AlertTriangle, Phone, Mail, FileText, Check, MessageSquare } from "lucide-react";
-import { mockListings, formatCurrency } from "@/lib/mock-data";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ChevronRight, MapPin, ShieldCheck, Ruler, Calendar, CheckCircle2, Lock, AlertTriangle, Phone, FileText, MessageSquare, Loader2 } from "lucide-react";
+import { formatCurrency, formatDate } from "@/lib/format";
 import { Link, useParams } from "wouter";
+import { useGetListing, useMakeOffer } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { getListMyOffersQueryKey } from "@workspace/api-client-react";
 
 export default function PropertyDetail() {
   const params = useParams();
-  const listingId = params.id || "LND-8821";
-  const property = mockListings.find(l => l.id === listingId) || mockListings[0];
+  const listingId = Number(params.id);
+  const queryClient = useQueryClient();
+
+  const [offerAmount, setOfferAmount] = useState("");
+  const [offerMessage, setOfferMessage] = useState("");
+  const [offerSuccess, setOfferSuccess] = useState(false);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data: property, isLoading, error } = useGetListing(listingId, {
+    query: { enabled: !!listingId && !isNaN(listingId) } as any,
+  });
+
+  const { mutate: submitOffer, isPending: isSubmitting } = useMakeOffer({
+    mutation: {
+      onSuccess: () => {
+        setOfferSuccess(true);
+        setOfferAmount("");
+        setOfferMessage("");
+        queryClient.invalidateQueries({ queryKey: getListMyOffersQueryKey() });
+      },
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-full">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (error || !property) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center h-full gap-4">
+          <p className="text-muted-foreground font-medium">Property not found.</p>
+          <Link href="/marketplace">
+            <Button variant="outline">Back to Marketplace</Button>
+          </Link>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const isVerified = property.status === "verified" || property.status === "active";
+
+  const handleMakeOffer = () => {
+    if (!offerAmount) return;
+    submitOffer({
+      listingId: property.id,
+      data: {
+        amount: Number(offerAmount),
+        message: offerMessage || undefined,
+      },
+    });
+  };
 
   return (
     <AppLayout>
@@ -22,7 +83,7 @@ export default function PropertyDetail() {
           <ChevronRight className="w-4 h-4 mx-2" />
           <span className="text-foreground">Property Details</span>
           <ChevronRight className="w-4 h-4 mx-2" />
-          <span className="text-foreground">{property.id}</span>
+          <span className="text-foreground">#{property.id}</span>
         </div>
 
         <div className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
@@ -31,19 +92,25 @@ export default function PropertyDetail() {
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-6 mb-8">
             <div>
               <div className="flex items-center gap-3 mb-3">
-                <Badge variant="success" className="bg-green-100 text-green-800 border-none font-bold text-xs px-2.5 py-1 uppercase">
-                  <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Verified Property
-                </Badge>
+                {isVerified ? (
+                  <Badge variant="success" className="bg-green-100 text-green-800 border-none font-bold text-xs px-2.5 py-1 uppercase">
+                    <ShieldCheck className="w-3.5 h-3.5 mr-1" /> Verified Property
+                  </Badge>
+                ) : (
+                  <Badge variant="warning" className="bg-amber-100 text-amber-800 border-none font-bold text-xs px-2.5 py-1 uppercase">
+                    {property.status.replace(/_/g, ' ')}
+                  </Badge>
+                )}
                 <Badge variant="outline" className="font-semibold text-xs text-muted-foreground">
-                  {property.id}
+                  #{property.id}
                 </Badge>
               </div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground mb-3">
-                {property.name}
+                {property.title}
               </h1>
               <div className="flex items-center text-lg text-muted-foreground font-medium">
                 <MapPin className="w-5 h-5 mr-2 text-primary" />
-                Block 12, Plot 4, {property.location}
+                {property.address ? `${property.address}, ` : ''}{property.city}, {property.state}
               </div>
             </div>
             <div className="flex gap-3">
@@ -59,19 +126,26 @@ export default function PropertyDetail() {
               
               {/* Hero Image */}
               <div className="rounded-xl overflow-hidden border bg-card shadow-sm">
-                <div className="aspect-[21/9] bg-gradient-to-b from-slate-700 to-slate-900 relative">
+                <div className="aspect-[21/9] bg-gradient-to-b from-slate-700 to-slate-900 relative overflow-hidden">
+                  {property.images && property.images.length > 0 ? (
+                    <img src={property.images[0]} alt={property.title} className="absolute inset-0 w-full h-full object-cover" />
+                  ) : null}
                   <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white px-3 py-1.5 rounded text-xs font-bold tracking-wider">
-                    1 / 12 PHOTOS
+                    {property.images?.length ?? 0} PHOTOS
                   </div>
                 </div>
-                <div className="p-3 bg-card flex gap-3 overflow-x-auto border-t">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="w-32 aspect-video bg-muted rounded border hover:border-primary cursor-pointer transition-colors flex-shrink-0" />
-                  ))}
-                  <div className="w-32 aspect-video bg-muted rounded border border-dashed flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors flex-shrink-0">
-                    <span className="text-xs font-bold text-muted-foreground">+8 More</span>
+                {property.images && property.images.length > 1 && (
+                  <div className="p-3 bg-card flex gap-3 overflow-x-auto border-t">
+                    {property.images.slice(1, 4).map((img, i) => (
+                      <img key={i} src={img} alt="" className="w-32 aspect-video rounded border object-cover flex-shrink-0" />
+                    ))}
+                    {property.images.length > 4 && (
+                      <div className="w-32 aspect-video bg-muted rounded border border-dashed flex items-center justify-center cursor-pointer hover:bg-muted/80 transition-colors flex-shrink-0">
+                        <span className="text-xs font-bold text-muted-foreground">+{property.images.length - 4} More</span>
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
 
               {/* Quick Stats */}
@@ -83,8 +157,8 @@ export default function PropertyDetail() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-muted-foreground tracking-wider mb-0.5">LAND SIZE</p>
-                      <p className="font-bold text-sm text-foreground">{property.size}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">Approx. 0.59 Acres</p>
+                      <p className="font-bold text-sm text-foreground">{property.areaSqm?.toLocaleString() ?? '—'} sqm</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{property.propertyType}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -94,9 +168,9 @@ export default function PropertyDetail() {
                       <ShieldCheck className="w-5 h-5" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-muted-foreground tracking-wider mb-0.5">LAND USE</p>
-                      <p className="font-bold text-sm text-foreground">{property.type}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">C of O Registered</p>
+                      <p className="text-xs font-bold text-muted-foreground tracking-wider mb-0.5">PROPERTY TYPE</p>
+                      <p className="font-bold text-sm text-foreground capitalize">{property.propertyType}</p>
+                      {isVerified && <p className="text-[10px] text-muted-foreground mt-0.5">C of O Registered</p>}
                     </div>
                   </CardContent>
                 </Card>
@@ -107,8 +181,7 @@ export default function PropertyDetail() {
                     </div>
                     <div>
                       <p className="text-xs font-bold text-muted-foreground tracking-wider mb-0.5">LISTED DATE</p>
-                      <p className="font-bold text-sm text-foreground">{property.date}</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">12 days ago</p>
+                      <p className="font-bold text-sm text-foreground">{formatDate(property.createdAt)}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -125,50 +198,64 @@ export default function PropertyDetail() {
                 <TabsContent value="overview" className="py-6 space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
                   <section>
                     <h3 className="text-lg font-bold mb-4">Property Description</h3>
-                    <div className="text-muted-foreground text-sm leading-relaxed space-y-4">
-                      <p>
-                        This premium {property.size.toLowerCase()} {property.type.toLowerCase()} plot is situated in the highly sought-after development corridor of {property.location}. The land is fully dry, leveled, and ready for immediate development.
-                      </p>
-                      <p>
-                        All relevant titles have been rigorously audited by the {property.state} Land Bureau and cleared for transfer through the Landevo platform. It holds a valid Certificate of Occupancy and approved layout plan.
-                      </p>
+                    <div className="text-muted-foreground text-sm leading-relaxed">
+                      {property.description ? (
+                        <p>{property.description}</p>
+                      ) : (
+                        <p>
+                          This premium {property.areaSqm?.toLocaleString()} sqm {property.propertyType} plot is situated in {property.city}, {property.state}.
+                          {isVerified && ' All relevant titles have been rigorously audited and cleared for transfer through the Landevo platform.'}
+                        </p>
+                      )}
                     </div>
                   </section>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-border/50">
                     <div>
                       <h4 className="font-bold mb-4 flex items-center text-sm">
-                        <CheckCircle2 className="w-4 h-4 mr-2 text-primary" /> KEY INFRASTRUCTURE
+                        <CheckCircle2 className="w-4 h-4 mr-2 text-primary" /> KEY DETAILS
                       </h4>
                       <ul className="space-y-3">
-                        {['Paved Access Road (Tarred)', 'Public Power Grid Connection', 'Structured Drainage System', 'Central Water Supply'].map((item, i) => (
-                          <li key={i} className="flex items-start text-sm text-muted-foreground">
+                        {property.bedrooms != null && (
+                          <li className="flex items-start text-sm text-muted-foreground">
                             <span className="w-1.5 h-1.5 rounded-full bg-primary/50 mt-1.5 mr-3 flex-shrink-0"></span>
-                            {item}
+                            {property.bedrooms} Bedrooms
                           </li>
-                        ))}
+                        )}
+                        {property.bathrooms != null && (
+                          <li className="flex items-start text-sm text-muted-foreground">
+                            <span className="w-1.5 h-1.5 rounded-full bg-primary/50 mt-1.5 mr-3 flex-shrink-0"></span>
+                            {property.bathrooms} Bathrooms
+                          </li>
+                        )}
+                        <li className="flex items-start text-sm text-muted-foreground">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary/50 mt-1.5 mr-3 flex-shrink-0"></span>
+                          {property.areaSqm?.toLocaleString()} sqm total area
+                        </li>
+                        <li className="flex items-start text-sm text-muted-foreground capitalize">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary/50 mt-1.5 mr-3 flex-shrink-0"></span>
+                          {property.propertyType} property type
+                        </li>
                       </ul>
                     </div>
                     <div>
                       <h4 className="font-bold mb-4 flex items-center text-sm">
-                        <MapPin className="w-4 h-4 mr-2 text-primary" /> NEARBY LANDMARKS
+                        <MapPin className="w-4 h-4 mr-2 text-primary" /> LOCATION
                       </h4>
                       <ul className="space-y-3">
+                        {property.address && (
+                          <li className="flex justify-between items-center text-sm">
+                            <span className="text-muted-foreground">Address</span>
+                            <span className="font-semibold text-foreground text-right max-w-[60%]">{property.address}</span>
+                          </li>
+                        )}
                         <li className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">Central Business District</span>
-                          <span className="font-semibold text-foreground">3.2 km</span>
+                          <span className="text-muted-foreground">City</span>
+                          <span className="font-semibold text-foreground">{property.city}</span>
                         </li>
                         <li className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">International Airport</span>
-                          <span className="font-semibold text-foreground">14.5 km</span>
-                        </li>
-                        <li className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">General Hospital</span>
-                          <span className="font-semibold text-foreground">1.8 km</span>
-                        </li>
-                        <li className="flex justify-between items-center text-sm">
-                          <span className="text-muted-foreground">Shopping Mall</span>
-                          <span className="font-semibold text-foreground">2.5 km</span>
+                          <span className="text-muted-foreground">State</span>
+                          <span className="font-semibold text-foreground">{property.state}</span>
                         </li>
                       </ul>
                     </div>
@@ -196,8 +283,12 @@ export default function PropertyDetail() {
                   <CardContent className="p-6">
                     <div className="mb-6">
                       <p className="text-xs font-bold text-muted-foreground tracking-wider mb-1">LISTING PRICE</p>
-                      <h2 className="text-3xl font-bold text-foreground mb-1">{formatCurrency(property.value)}</h2>
-                      <p className="text-xs text-muted-foreground font-medium">Approx. ₦165,000 per sqm (at market rate)</p>
+                      <h2 className="text-3xl font-bold text-foreground mb-1">{formatCurrency(property.price)}</h2>
+                      {property.areaSqm && (
+                        <p className="text-xs text-muted-foreground font-medium">
+                          Approx. {formatCurrency(Math.round(property.price / property.areaSqm))} per sqm
+                        </p>
+                      )}
                     </div>
 
                     <div className="flex items-start gap-3 p-3 bg-green-50 rounded-lg border border-green-100 mb-6">
@@ -208,10 +299,51 @@ export default function PropertyDetail() {
                       </div>
                     </div>
 
-                    <div className="space-y-3">
-                      <Button className="w-full h-12 text-base font-bold shadow-md">START PURCHASE FLOW</Button>
-                      <Button variant="outline" className="w-full h-12 font-bold border-2">MAKE AN OFFER</Button>
-                    </div>
+                    {offerSuccess ? (
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                        <CheckCircle2 className="w-8 h-8 text-green-600 mx-auto mb-2" />
+                        <p className="font-bold text-sm text-green-800">Offer Submitted!</p>
+                        <p className="text-xs text-green-700 mt-1">The agent will review your offer.</p>
+                        <Button variant="outline" size="sm" className="mt-3 text-xs" onClick={() => setOfferSuccess(false)}>Make Another Offer</Button>
+                      </div>
+                    ) : property.status === "active" || property.status === "verified" ? (
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">YOUR OFFER AMOUNT (₦)</p>
+                          <Input
+                            type="number"
+                            placeholder={String(property.price)}
+                            value={offerAmount}
+                            onChange={(e) => setOfferAmount(e.target.value)}
+                            className="h-10"
+                          />
+                        </div>
+                        <div>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">MESSAGE (optional)</p>
+                          <Textarea
+                            placeholder="Brief note to the agent..."
+                            value={offerMessage}
+                            onChange={(e) => setOfferMessage(e.target.value)}
+                            className="text-sm resize-none"
+                            rows={2}
+                          />
+                        </div>
+                        <Button
+                          className="w-full h-12 text-base font-bold shadow-md"
+                          onClick={handleMakeOffer}
+                          disabled={isSubmitting || !offerAmount}
+                        >
+                          {isSubmitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                          MAKE AN OFFER
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="bg-muted rounded-lg p-4 text-center">
+                        <p className="text-sm font-medium text-muted-foreground">
+                          This listing is currently <span className="font-bold capitalize">{property.status.replace(/_/g, ' ')}</span> and not accepting offers.
+                        </p>
+                      </div>
+                    )}
 
                     <div className="mt-6 pt-5 border-t space-y-3">
                       <div className="flex justify-between items-center text-sm">
@@ -220,7 +352,11 @@ export default function PropertyDetail() {
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Comm. Approval</span>
-                        <span className="font-bold text-primary flex items-center"><Check className="w-4 h-4 mr-1" /> Obtained</span>
+                        {isVerified ? (
+                          <span className="font-bold text-primary flex items-center"><CheckCircle2 className="w-4 h-4 mr-1" /> Obtained</span>
+                        ) : (
+                          <span className="font-semibold text-amber-600">Pending</span>
+                        )}
                       </div>
                     </div>
                   </CardContent>
@@ -234,11 +370,11 @@ export default function PropertyDetail() {
                   <CardContent className="p-5">
                     <div className="flex items-center gap-4 mb-5">
                       <div className="w-12 h-12 rounded-full bg-sidebar flex items-center justify-center font-bold text-white text-lg border-2 border-primary/20">
-                        CO
+                        {property.agentName?.split(' ').map(n => n[0]).join('').slice(0, 2) || 'AG'}
                       </div>
                       <div>
-                        <h4 className="font-bold text-base">Chidi Okafor</h4>
-                        <p className="text-xs text-muted-foreground font-medium">Senior Land Consultant</p>
+                        <h4 className="font-bold text-base">{property.agentName || 'Agent'}</h4>
+                        <p className="text-xs text-muted-foreground font-medium">Land Consultant</p>
                         <div className="flex items-center gap-1 mt-1">
                           <ShieldCheck className="w-3 h-3 text-primary" />
                           <span className="text-[10px] font-bold text-primary tracking-wider">VERIFIED AGENT</span>
