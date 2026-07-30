@@ -1,6 +1,6 @@
-# [Project name]
+# Landevo
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+A real estate platform for property agents and buyers — agents list, verify, and manage properties; buyers browse, make offers, and track transactions.
 
 ## Run & Operate
 
