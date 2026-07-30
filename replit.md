@@ -1,67 +1,51 @@
 # Landevo
 
-A real estate platform for property agents and buyers — agents list, verify, and manage properties; buyers browse, make offers, and track transactions.
-
-## Run & Operate
-
-- **Frontend** (port 5173): workflow `Landevo Frontend` — `PORT=5173 BASE_PATH=/ pnpm --filter @workspace/landevo run dev`
-- **API** (port 8080): workflow `API Server` — `PORT=8080 pnpm --filter @workspace/api-server run dev`
-- `pnpm run typecheck` — full typecheck across all packages
-- `pnpm run build` — typecheck + build all packages
-- `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` (Replit-managed), `SESSION_SECRET` (Replit secret)
-
-## Auth
-
-Session-based auth (express-session + connect-pg-simple, 30-day cookies).
-
-- `POST /api/auth/register` — `{ name, email, password, role: "agent"|"buyer" }`
-- `POST /api/auth/login` — `{ email, password }`
-- `POST /api/auth/logout`
-- `GET /api/auth/me` — returns current user or 401
-
-Roles:
-- **agent** → `/dashboard` and agent sidebar (Dashboard, Marketplace, Transactions, Messages, Settings)
-- **buyer** → `/buyer` and buyer portal
-- **commission_admin** → `/commission` and dedicated Land Commission portal (Dashboard, Agent Verifications, Listing Audits, Activity Log, Officers)
-
-Commission admins cannot self-register — they must be provisioned directly in the DB (INSERT with role `commission_admin`).
-
-## Test Accounts
-- Agent: `agent@test.com` / `password123`
-- Buyer: `buyer@test.com` / `password123`
-- Commission: `commission@landevo.ng` / `commission123`
+A real estate marketplace platform with role-based access for agents, buyers, commission officers, and admins.
 
 ## Stack
 
-- pnpm workspaces, Node.js 24, TypeScript 5.9
-- API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
-- API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- **Frontend**: React + Vite + Tailwind CSS + shadcn/ui (`artifacts/landevo`)
+- **Backend**: Express 5 API server with session-based auth (`artifacts/api-server`)
+- **Database**: PostgreSQL via Drizzle ORM (`lib/db`)
+- **Package manager**: pnpm workspaces
 
-## Where things live
+## How to run
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+Both services start automatically via their configured workflows:
 
-## Architecture decisions
+- **Landevo Frontend** — `PORT=5173 pnpm --filter @workspace/landevo run dev`
+- **API Server** — `PORT=8080 pnpm --filter @workspace/api-server run dev`
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+## Environment variables / secrets
 
-## Product
+| Key | Where | Notes |
+|-----|-------|-------|
+| `DATABASE_URL` | Runtime-managed | Set automatically by Replit |
+| `SESSION_SECRET` | Secret | Required for express-session |
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+## Database
+
+Schema is managed with Drizzle Kit. To push schema changes to the dev database:
+
+```
+pnpm --filter @workspace/db run push
+```
+
+Tables: `users` (with role enum: `agent`, `buyer`, `commission_admin`, `system_admin`), `session`
+
+## Monorepo layout
+
+```
+artifacts/
+  api-server/   Express API
+  landevo/      React frontend
+lib/
+  api-client-react/   Generated React Query hooks
+  api-spec/           OpenAPI spec
+  api-zod/            Zod schemas
+  db/                 Drizzle schema + client
+```
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
-
-## Gotchas
-
-_Populate as you build — sharp edges, "always run X before Y" rules._
-
-## Pointers
-
-- See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details
+(none yet)
