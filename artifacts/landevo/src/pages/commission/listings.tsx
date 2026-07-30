@@ -72,6 +72,7 @@ const statusConfig: Record<string, { bg: string; label: string; icon: React.Elem
 };
 
 const tabs: AuditStatus[] = ["All", "Awaiting Audit", "Under Review", "Approved", "Correction Required"];
+type FilterStatus = Exclude<AuditStatus, "All">;
 
 function formatCurrency(n: number) {
   if (n >= 1_000_000) return `₦ ${(n / 1_000_000).toFixed(1)}M`;
@@ -110,16 +111,17 @@ export default function CommissionListings() {
 
         {/* Stats */}
         <div className="grid grid-cols-4 gap-3">
-          {tabs.slice(1).map((s) => {
+          {(tabs.slice(1) as FilterStatus[]).map((s) => {
             const count = listings.filter((l) => l.status === s).length;
-            const colors = {
+            const colors: Record<FilterStatus, string> = {
               "Awaiting Audit": "border-l-amber-400",
               "Under Review": "border-l-blue-400",
               "Approved": "border-l-emerald-500",
               "Correction Required": "border-l-red-400",
-            }[s] ?? "";
+            };
+            const color = colors[s] ?? "";
             return (
-              <Card key={s} className={`bg-white shadow-sm border-l-4 ${colors} cursor-pointer hover:shadow-md transition-shadow`} onClick={() => setActiveTab(s)}>
+              <Card key={s} className={`bg-white shadow-sm border-l-4 ${color} cursor-pointer hover:shadow-md transition-shadow`} onClick={() => setActiveTab(s)}>
                 <CardContent className="p-4">
                   <p className="text-[10px] font-bold text-muted-foreground tracking-wider">{s.toUpperCase()}</p>
                   <p className="text-2xl font-bold mt-1">{count}</p>

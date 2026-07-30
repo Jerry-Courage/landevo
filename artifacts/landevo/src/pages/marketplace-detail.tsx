@@ -180,7 +180,7 @@ export default function PropertyDetail() {
                 </TabsContent>
                 <TabsContent value="map" className="py-6">
                   <div className="w-full h-[400px] bg-muted rounded-lg border flex items-center justify-center">
-                    <span className="text-muted-foreground font-medium flex items-center"><Map className="w-5 h-5 mr-2" /> Map Integration Pending</span>
+                    <span className="text-muted-foreground font-medium flex items-center"><MapPin className="w-5 h-5 mr-2" /> Map Integration Pending</span>
                   </div>
                 </TabsContent>
               </Tabs>
