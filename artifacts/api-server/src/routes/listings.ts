@@ -225,7 +225,7 @@ router.post("/:id/submit", requireRole("agent"), async (req, res) => {
 
   if (!existing) return res.status(404).json({ error: "Listing not found" });
   if (existing.agentId !== req.session.userId) return res.status(403).json({ error: "Not your listing" });
-  if (!["draft", "rejected"].includes(existing.status)) {
+  if (existing.status !== "draft") {
     return res.status(400).json({ error: "Only draft listings can be submitted for verification" });
   }
 

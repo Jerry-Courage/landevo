@@ -50,6 +50,11 @@ router.get("/", requireAuth, async (req, res) => {
   const role = req.session.userRole!;
   const userId = req.session.userId!;
 
+  // Buyers have no access to the verification pipeline
+  if (role === "buyer") {
+    return res.json([]);
+  }
+
   const conditions: ReturnType<typeof eq>[] = [];
   if (status) {
     conditions.push(
@@ -91,8 +96,16 @@ router.get("/:id", requireAuth, async (req, res) => {
   const id = parseInt(req.params.id);
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
+  const role = req.session.userRole!;
+  if (role === "buyer") return res.status(403).json({ error: "Access denied" });
+
   const v = await getVerification(id);
   if (!v) return res.status(404).json({ error: "Verification not found" });
+
+  // Agents can only view verifications for their own listings
+  if (role === "agent" && v.agentId !== req.session.userId) {
+    return res.status(403).json({ error: "Access denied" });
+  }
 
   return res.json(v);
 });
@@ -104,6 +117,16 @@ router.patch("/:id/assign", requireRole("commission_admin"), async (req, res) =>
 
   const { officerId } = req.body as { officerId?: number };
   if (!officerId) return res.status(400).json({ error: "officerId is required" });
+
+  // Validate that the target is a real commission_admin
+  const [officer] = await db
+    .select({ id: usersTable.id, role: usersTable.role })
+    .from(usersTable)
+    .where(eq(usersTable.id, officerId));
+  if (!officer) return res.status(404).json({ error: "Officer not found" });
+  if (officer.role !== "commission_admin") {
+    return res.status(400).json({ error: "Assigned user must be a commission_admin" });
+  }
 
   const [v] = await db
     .select({ id: verificationsTable.id, status: verificationsTable.status })

@@ -1,50 +1,80 @@
 import React, { useState } from "react";
 import AdminLayout from "@/components/admin-layout";
 import { ArrowRightLeft, Search, CheckCircle2, Clock, AlertTriangle, Landmark, XCircle } from "lucide-react";
+import { useListTransactions } from "@workspace/api-client-react";
 
-type TxnStatus = "All" | "Completed" | "In Progress" | "Disputed" | "Cancelled";
+type TxnStatus = "All" | "Completed" | "In Progress" | "Cancelled";
 
-const transactions = [
-  { id: "TXN-9201", property: "Sunset Heights Estate, Ikoyi", buyer: "Aisha Bello", agent: "Jonas Eze", value: 48000000, escrow: "Pending Release", status: "In Progress", date: "Oct 18, 2023", commission: "Cleared" },
-  { id: "TXN-9104", property: "Maitama Commercial Complex", buyer: "Emeka Obi", agent: "Amaka Obi", value: 320000000, escrow: "Pending Release", status: "In Progress", date: "Oct 17, 2023", commission: "Cleared" },
-  { id: "TXN-8990", property: "Abuja FCT Residential Plot", buyer: "Ngozi Eze", agent: "Alex Sterling", value: 15000000, escrow: "In Escrow", status: "In Progress", date: "Oct 15, 2023", commission: "Pending" },
-  { id: "TXN-8821", property: "Lekki Phase 1 Corner Plot", buyer: "Samuel Akin", agent: "Kemi Afolabi", value: 25000000, escrow: "Released", status: "Completed", date: "Oct 10, 2023", commission: "Cleared" },
-  { id: "TXN-8654", property: "Emerald Valley Phase II", buyer: "Bola Adeyemi", agent: "Musa Ibrahim", value: 18500000, escrow: "Released", status: "Completed", date: "Oct 5, 2023", commission: "Cleared" },
-  { id: "TXN-7720", property: "Maitama Gardens Phase II", buyer: "Tunde Adeyemi", agent: "Kemi Afolabi", value: 22000000, escrow: "Disputed", status: "Disputed", date: "Sep 28, 2023", commission: "On Hold" },
-  { id: "TXN-7615", property: "Hilltop Acreage, Abeokuta", buyer: "Chioma Obi", agent: "Adaeze Nwosu", value: 9800000, escrow: "Refunded", status: "Cancelled", date: "Sep 20, 2023", commission: "N/A" },
-  { id: "TXN-7502", property: "Prime Waterfront Plot, VI", buyer: "Felix Mensah", agent: "Ngozi Adeyemi", value: 245000000, escrow: "Released", status: "Completed", date: "Sep 15, 2023", commission: "Cleared" },
-];
-
-function fmt(n: number) {
+function fmtAmt(n: number) {
   if (n >= 1_000_000_000) return `₦ ${(n / 1_000_000_000).toFixed(2)}B`;
-  if (n >= 1_000_000) return `₦ ${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000_000)     return `₦ ${(n / 1_000_000).toFixed(1)}M`;
   return `₦ ${n.toLocaleString()}`;
 }
 
-const statusStyle: Record<string, string> = {
-  "Completed": "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+function fmtDate(d: string | Date | null | undefined) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function toDisplayStatus(s: string): TxnStatus {
+  if (s === "completed")  return "Completed";
+  if (s === "cancelled")  return "Cancelled";
+  return "In Progress";
+}
+
+function toEscrowLabel(s: string) {
+  switch (s) {
+    case "completed":             return "Released";
+    case "cancelled":             return "Refunded";
+    case "verification_complete": return "Pending Release";
+    case "escrow_opened":
+    case "funds_deposited":       return "In Escrow";
+    default:                      return "In Escrow";
+  }
+}
+
+const statusStyle: Record<TxnStatus, string> = {
+  Completed:   "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
   "In Progress": "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
-  "Disputed": "bg-red-500/15 text-red-400 border-red-500/20",
-  "Cancelled": "bg-slate-500/15 text-slate-400 border-slate-500/20",
-};
-const statusIcon: Record<string, React.ElementType> = {
-  "Completed": CheckCircle2, "In Progress": Clock, "Disputed": AlertTriangle, "Cancelled": XCircle,
+  Cancelled:   "bg-slate-500/15 text-slate-400 border-slate-500/20",
 };
 
-const tabs: TxnStatus[] = ["All", "In Progress", "Completed", "Disputed", "Cancelled"];
+const statusIcon: Record<TxnStatus, React.ElementType> = {
+  Completed:     CheckCircle2,
+  "In Progress": Clock,
+  Cancelled:     XCircle,
+};
+
+const tabs: TxnStatus[] = ["All", "In Progress", "Completed", "Cancelled"];
 
 export default function AdminTransactions() {
   const [tab, setTab] = useState<TxnStatus>("All");
   const [search, setSearch] = useState("");
 
+  const { data: rawTxns = [] } = useListTransactions();
+
+  const transactions = rawTxns.map((t) => ({
+    id:         t.id,
+    property:   t.listingTitle,
+    buyer:      t.buyerName,
+    agent:      t.agentName,
+    value:      t.agreedAmount ?? t.offerAmount ?? 0,
+    escrow:     toEscrowLabel(t.status),
+    status:     toDisplayStatus(t.status),
+    date:       fmtDate(t.createdAt),
+    rawStatus:  t.status,
+  }));
+
   const filtered = transactions.filter((t) => {
     const matchTab = tab === "All" || t.status === tab;
-    const matchSearch = !search || t.property.toLowerCase().includes(search.toLowerCase()) ||
-      t.id.toLowerCase().includes(search.toLowerCase()) || t.buyer.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = !search ||
+      t.property.toLowerCase().includes(search.toLowerCase()) ||
+      String(t.id).includes(search) ||
+      t.buyer.toLowerCase().includes(search.toLowerCase());
     return matchTab && matchSearch;
   });
 
-  const totalVolume = transactions.reduce((s, t) => s + t.value, 0);
+  const totalVolume    = transactions.reduce((s, t) => s + t.value, 0);
   const completedVolume = transactions.filter(t => t.status === "Completed").reduce((s, t) => s + t.value, 0);
 
   return (
@@ -59,10 +89,10 @@ export default function AdminTransactions() {
         {/* Stats */}
         <div className="grid grid-cols-4 gap-4">
           {[
-            { label: "TOTAL VOLUME", value: fmt(totalVolume), color: "text-white" },
-            { label: "COMPLETED", value: fmt(completedVolume), color: "text-emerald-400" },
-            { label: "IN PROGRESS", value: transactions.filter(t => t.status === "In Progress").length.toString(), color: "text-indigo-400" },
-            { label: "DISPUTED", value: transactions.filter(t => t.status === "Disputed").length.toString(), color: "text-red-400" },
+            { label: "TOTAL VOLUME",  value: fmtAmt(totalVolume),     color: "text-white" },
+            { label: "COMPLETED",     value: fmtAmt(completedVolume), color: "text-emerald-400" },
+            { label: "IN PROGRESS",   value: String(transactions.filter(t => t.status === "In Progress").length), color: "text-indigo-400" },
+            { label: "CANCELLED",     value: String(transactions.filter(t => t.status === "Cancelled").length),  color: "text-slate-400" },
           ].map((s) => (
             <div key={s.label} className="rounded-xl border p-5" style={{ background: "rgba(255,255,255,0.02)", borderColor: "rgba(255,255,255,0.07)" }}>
               <p className="text-[10px] font-bold tracking-wider mb-2" style={{ color: "rgba(255,255,255,0.35)" }}>{s.label}</p>
@@ -99,34 +129,35 @@ export default function AdminTransactions() {
           <table className="w-full">
             <thead>
               <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.07)", background: "rgba(255,255,255,0.02)" }}>
-                {["TXN ID", "PROPERTY", "BUYER", "AGENT", "VALUE", "ESCROW", "COMMISSION", "DATE", "STATUS"].map((h) => (
+                {["TXN ID", "PROPERTY", "BUYER", "AGENT", "VALUE", "ESCROW", "DATE", "STATUS"].map((h) => (
                   <th key={h} className="text-left px-5 py-3 text-[10px] font-bold tracking-wider" style={{ color: "rgba(255,255,255,0.3)" }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {filtered.map((txn) => {
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="px-5 py-12 text-center text-sm" style={{ color: "rgba(255,255,255,0.3)" }}>
+                    No transactions found
+                  </td>
+                </tr>
+              ) : filtered.map((txn) => {
                 const StatusIcon = statusIcon[txn.status];
                 return (
                   <tr key={txn.id} className="transition-colors" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}
                     onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.03)")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}>
-                    <td className="px-5 py-3.5 font-mono text-xs font-semibold text-indigo-400">{txn.id}</td>
+                    <td className="px-5 py-3.5 font-mono text-xs font-semibold text-indigo-400">#{txn.id}</td>
                     <td className="px-5 py-3.5 text-sm font-semibold text-white max-w-[180px]">
                       <span className="truncate block">{txn.property}</span>
                     </td>
                     <td className="px-5 py-3.5 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>{txn.buyer}</td>
                     <td className="px-5 py-3.5 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>{txn.agent}</td>
-                    <td className="px-5 py-3.5 text-sm font-bold text-white">{fmt(txn.value)}</td>
+                    <td className="px-5 py-3.5 text-sm font-bold text-white">{fmtAmt(txn.value)}</td>
                     <td className="px-5 py-3.5">
                       <span className="text-xs font-semibold flex items-center gap-1">
-                        <Landmark className={`w-3 h-3 ${txn.escrow === "Released" ? "text-emerald-400" : txn.escrow === "Disputed" ? "text-red-400" : "text-indigo-400"}`} />
+                        <Landmark className={`w-3 h-3 ${txn.escrow === "Released" ? "text-emerald-400" : txn.escrow === "Refunded" ? "text-slate-400" : "text-indigo-400"}`} />
                         <span style={{ color: "rgba(255,255,255,0.5)" }}>{txn.escrow}</span>
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span className={`text-xs font-bold ${txn.commission === "Cleared" ? "text-emerald-400" : txn.commission === "On Hold" ? "text-red-400" : txn.commission === "N/A" ? "text-white/25" : "text-amber-400"}`}>
-                        {txn.commission}
                       </span>
                     </td>
                     <td className="px-5 py-3.5 text-xs" style={{ color: "rgba(255,255,255,0.4)" }}>{txn.date}</td>

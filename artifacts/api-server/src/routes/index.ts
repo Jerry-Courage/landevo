@@ -8,6 +8,7 @@ import transactionsRouter from "./transactions";
 import messagesRouter from "./messages";
 import notificationsRouter from "./notifications";
 import dashboardRouter from "./dashboard";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -20,5 +21,6 @@ router.use("/transactions", transactionsRouter);
 router.use("/", messagesRouter);             // /threads and /threads/:id/messages
 router.use("/notifications", notificationsRouter);
 router.use("/dashboard", dashboardRouter);
+router.use("/admin", adminRouter);
 
 export default router;

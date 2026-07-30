@@ -110,24 +110,12 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
   const { status } = req.body as { status?: string };
   if (!status) return res.status(400).json({ error: "status is required" });
 
-  const validStatuses = [
-    "offer_made",
-    "accepted",
-    "escrow_opened",
-    "funds_deposited",
-    "verification_complete",
-    "completed",
-    "cancelled",
-  ];
-  if (!validStatuses.includes(status)) {
-    return res.status(400).json({ error: "Invalid status" });
-  }
-
   const [existing] = await db
     .select({
       id: transactionsTable.id,
       buyerId: transactionsTable.buyerId,
       agentId: transactionsTable.agentId,
+      status: transactionsTable.status,
     })
     .from(transactionsTable)
     .where(eq(transactionsTable.id, id));
@@ -143,6 +131,25 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
     role === "commission_admin";
 
   if (!isParticipant) return res.status(403).json({ error: "Access denied" });
+
+  // Role-based state machine
+  // Terminal / immutable states
+  if (existing.status === "completed" || existing.status === "cancelled") {
+    return res.status(400).json({ error: "Transaction is already finalised" });
+  }
+
+  const allowedTransitions: Record<string, string[]> = {
+    // buyer: deposit funds; anyone: move to escrow or cancel
+    buyer:            ["escrow_opened", "funds_deposited", "cancelled"],
+    agent:            ["escrow_opened", "cancelled"],
+    commission_admin: ["escrow_opened", "funds_deposited", "verification_complete", "completed", "cancelled"],
+    system_admin:     ["escrow_opened", "funds_deposited", "verification_complete", "completed", "cancelled"],
+  };
+
+  const allowed = allowedTransitions[role] ?? [];
+  if (!allowed.includes(status)) {
+    return res.status(403).json({ error: `Role '${role}' cannot set status '${status}'` });
+  }
 
   await db
     .update(transactionsTable)

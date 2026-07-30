@@ -3,23 +3,54 @@ import BuyerLayout from "@/components/buyer-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Info, MapPin } from "lucide-react";
-import { mockBuyerOffers, formatCurrency } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/mock-data";
 import { Link } from "wouter";
+import { useListMyOffers } from "@workspace/api-client-react";
+
+type FilterLabel = "All" | "Accepted" | "Pending" | "Rejected" | "Withdrawn";
+
+function fmt(d: string | Date | null | undefined) {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" });
+}
+
+function apiStatusToDisplay(s: string): string {
+  switch (s) {
+    case "accepted":  return "ACCEPTED";
+    case "pending":   return "PENDING";
+    case "rejected":  return "REJECTED";
+    case "withdrawn": return "WITHDRAWN";
+    default:          return "PENDING";
+  }
+}
 
 export default function BuyerOffers() {
-  const [filter, setFilter] = useState("All");
+  const [filter, setFilter] = useState<FilterLabel>("All");
+  const { data: rawOffers = [] } = useListMyOffers();
 
-  const filters = [
-    { label: "All", count: mockBuyerOffers.length },
-    { label: "Accepted", count: mockBuyerOffers.filter(o => o.status === "ACCEPTED").length },
-    { label: "Under Review", count: mockBuyerOffers.filter(o => o.status === "UNDER REVIEW").length },
-    { label: "Pending", count: mockBuyerOffers.filter(o => o.status === "PENDING").length },
-    { label: "Rejected", count: 0 },
-  ];
+  const offers = rawOffers.map((o) => ({
+    id:           o.id,
+    propertyId:   String(o.listingId),
+    propertyName: o.listingTitle,
+    amount:       o.amount,
+    status:       apiStatusToDisplay(o.status),
+    date:         fmt(o.createdAt),
+    expiry:       "",
+  }));
 
-  const filteredOffers = filter === "All" 
-    ? mockBuyerOffers 
-    : mockBuyerOffers.filter(o => o.status === filter.toUpperCase());
+  const filterMap: Record<FilterLabel, string | null> = {
+    All: null, Accepted: "ACCEPTED", Pending: "PENDING", Rejected: "REJECTED", Withdrawn: "WITHDRAWN",
+  };
+
+  const counts: Record<FilterLabel, number> = {
+    All:       offers.length,
+    Accepted:  offers.filter(o => o.status === "ACCEPTED").length,
+    Pending:   offers.filter(o => o.status === "PENDING").length,
+    Rejected:  offers.filter(o => o.status === "REJECTED").length,
+    Withdrawn: offers.filter(o => o.status === "WITHDRAWN").length,
+  };
+
+  const filteredOffers = filter === "All" ? offers : offers.filter(o => o.status === filterMap[filter]);
 
   return (
     <BuyerLayout>
@@ -31,15 +62,15 @@ export default function BuyerOffers() {
 
         {/* Filter Tabs */}
         <div className="flex border-b overflow-x-auto hide-scrollbar">
-          {filters.map((f) => (
-            <button 
-              key={f.label} 
-              onClick={() => setFilter(f.label)}
-              className={`px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${filter === f.label ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
+          {(Object.keys(filterMap) as FilterLabel[]).map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`px-4 py-3 text-sm font-bold whitespace-nowrap border-b-2 transition-colors flex items-center gap-2 ${filter === f ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:text-foreground'}`}
             >
-              {f.label}
-              <span className={`px-2 py-0.5 rounded-full text-[10px] ${filter === f.label ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
-                {f.count}
+              {f}
+              <span className={`px-2 py-0.5 rounded-full text-[10px] ${filter === f ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'}`}>
+                {counts[f]}
               </span>
             </button>
           ))}
@@ -49,12 +80,12 @@ export default function BuyerOffers() {
         <div className="space-y-4">
           {filteredOffers.map((offer, i) => (
             <div key={offer.id} className="bg-card border rounded-lg overflow-hidden flex flex-col md:flex-row hover:shadow-md transition-shadow">
-              {/* Left: Thumbnail */}
+              {/* Thumbnail */}
               <div className="w-full md:w-48 h-32 md:h-auto relative flex-shrink-0 bg-muted">
-                <div className={`absolute inset-0 bg-gradient-to-br ${i%2===0 ? 'from-slate-700 to-teal-900' : 'from-green-900 to-slate-800'}`}></div>
+                <div className={`absolute inset-0 bg-gradient-to-br ${i % 2 === 0 ? 'from-slate-700 to-teal-900' : 'from-green-900 to-slate-800'}`} />
               </div>
-              
-              {/* Center: Details */}
+
+              {/* Details */}
               <div className="flex-1 p-5 flex flex-col justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
@@ -62,9 +93,6 @@ export default function BuyerOffers() {
                     <span className="text-xs text-muted-foreground font-medium">Submitted {offer.date}</span>
                   </div>
                   <h3 className="font-bold text-lg mb-1">{offer.propertyName}</h3>
-                  <div className="flex items-center text-xs text-muted-foreground mb-4">
-                    <MapPin className="w-3 h-3 mr-1" /> {offer.location}
-                  </div>
                 </div>
                 <div>
                   <p className="text-xs font-bold text-muted-foreground tracking-wider mb-1">OFFER AMOUNT</p>
@@ -72,33 +100,28 @@ export default function BuyerOffers() {
                 </div>
               </div>
 
-              {/* Right: Actions/Status */}
+              {/* Actions/Status */}
               <div className="w-full md:w-56 p-5 bg-muted/20 border-l flex flex-col justify-center gap-3">
                 <div className="mb-2">
-                  {offer.status === "ACCEPTED" && <Badge variant="success" className="bg-green-100 text-green-800 border-green-200">ACCEPTED</Badge>}
-                  {offer.status === "UNDER REVIEW" && <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200">UNDER REVIEW</Badge>}
-                  {offer.status === "PENDING" && <Badge variant="secondary" className="bg-slate-200 text-slate-700 border-slate-300">PENDING</Badge>}
+                  {offer.status === "ACCEPTED"  && <Badge className="bg-green-100 text-green-800 border-green-200">ACCEPTED</Badge>}
+                  {offer.status === "PENDING"   && <Badge className="bg-slate-200 text-slate-700 border-slate-300">PENDING</Badge>}
+                  {offer.status === "REJECTED"  && <Badge className="bg-red-100 text-red-800 border-red-200">REJECTED</Badge>}
+                  {offer.status === "WITHDRAWN" && <Badge className="bg-gray-100 text-gray-700 border-gray-200">WITHDRAWN</Badge>}
                 </div>
-                
+
                 {offer.status === "ACCEPTED" ? (
                   <Link href="/buyer/escrow">
                     <Button className="w-full font-bold bg-[#1B4332] hover:bg-[#1B4332]/90">View Escrow</Button>
                   </Link>
-                ) : (
+                ) : offer.status === "PENDING" ? (
                   <Button variant="outline" className="w-full font-bold border-destructive/20 text-destructive hover:bg-destructive/5 hover:text-destructive">
                     Withdraw Offer
                   </Button>
-                )}
-
-                {offer.expiry && (
-                  <p className="text-[10px] font-semibold text-center text-muted-foreground mt-1">
-                    {offer.expiry}
-                  </p>
-                )}
+                ) : null}
               </div>
             </div>
           ))}
-          
+
           {filteredOffers.length === 0 && (
             <div className="text-center py-12 bg-card border rounded-lg">
               <p className="text-muted-foreground font-medium">No offers found for this status.</p>
