@@ -11,10 +11,14 @@ A real estate marketplace platform with role-based access for agents, buyers, co
 
 ## How to run
 
-Both services start automatically via their configured workflows:
+Both services start automatically via the **Project** workflow (run button), which launches both in parallel:
 
-- **Landevo Frontend** — `PORT=5173 pnpm --filter @workspace/landevo run dev`
-- **API Server** — `PORT=8080 pnpm --filter @workspace/api-server run dev`
+| Workflow | Command | Port |
+|----------|---------|------|
+| **API Server** | `PORT=8080 pnpm --filter @workspace/api-server run dev` | 8080 |
+| **Landevo Frontend** | `PORT=5173 BASE_PATH=/ pnpm --filter @workspace/landevo run dev` | 5173 |
+
+The frontend Vite dev server proxies `/api/*` requests to the API server on port 8080.
 
 ## Environment variables / secrets
 
