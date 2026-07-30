@@ -13,6 +13,14 @@ import Settings from '@/pages/settings';
 import NotFound from '@/pages/not-found';
 import CommissionSettings from '@/pages/commission/settings';
 
+// Admin Pages
+import AdminLogin from '@/pages/admin/login';
+import AdminDashboard from '@/pages/admin/dashboard';
+import AdminEscrow from '@/pages/admin/escrow';
+import AdminUsers from '@/pages/admin/users';
+import AdminTransactions from '@/pages/admin/transactions';
+import AdminActivity from '@/pages/admin/activity';
+
 // Buyer Pages
 import BuyerHome from '@/pages/buyer/home';
 import BuyerBrowse from '@/pages/buyer/browse';
@@ -61,6 +69,15 @@ function CommissionRoute({ component: Component }: { component: React.ComponentT
   if (loading) return <LoadingScreen />;
   if (!user) return <Redirect to="/login" />;
   if (user.role !== 'commission_admin') return <Redirect to="/dashboard" />;
+  return <Component />;
+}
+
+/** System-admin-only routes */
+function SystemAdminRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Redirect to="/admin/login" />;
+  if (user.role !== 'system_admin') return <Redirect to="/admin/login" />;
   return <Component />;
 }
 
@@ -113,6 +130,14 @@ function Router() {
       <Route path="/commission/audit"         component={() => <CommissionRoute component={CommissionAudit} />} />
       <Route path="/commission/officers"      component={() => <CommissionRoute component={CommissionOfficers} />} />
       <Route path="/commission/settings"      component={() => <CommissionRoute component={CommissionSettings} />} />
+
+      {/* System Admin Routes */}
+      <Route path="/admin/login"        component={AdminLogin} />
+      <Route path="/admin"              component={() => <SystemAdminRoute component={AdminDashboard} />} />
+      <Route path="/admin/escrow"       component={() => <SystemAdminRoute component={AdminEscrow} />} />
+      <Route path="/admin/users"        component={() => <SystemAdminRoute component={AdminUsers} />} />
+      <Route path="/admin/transactions" component={() => <SystemAdminRoute component={AdminTransactions} />} />
+      <Route path="/admin/activity"     component={() => <SystemAdminRoute component={AdminActivity} />} />
 
       <Route component={NotFound} />
     </Switch>

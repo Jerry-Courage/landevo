@@ -8,7 +8,7 @@ import { logger } from "../lib/logger";
 declare module "express-session" {
   interface SessionData {
     userId: number;
-    userRole: "agent" | "buyer" | "commission_admin";
+    userRole: "agent" | "buyer" | "commission_admin" | "system_admin";
   }
 }
 

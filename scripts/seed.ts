@@ -6,6 +6,7 @@
  *   agent@test.com        / password123   (role: agent)
  *   buyer@test.com        / password123   (role: buyer)
  *   commission@landevo.ng / commission123 (role: commission_admin)
+ *   admin@landevo.ng      / Admin@Landevo1 (role: system_admin)
  */
 
 import bcrypt from "bcryptjs";
@@ -15,6 +16,7 @@ const accounts = [
   { name: "Test Agent", email: "agent@test.com", password: "password123", role: "agent" },
   { name: "Test Buyer", email: "buyer@test.com", password: "password123", role: "buyer" },
   { name: "Commission Admin", email: "commission@landevo.ng", password: "commission123", role: "commission_admin" },
+  { name: "System Administrator", email: "admin@landevo.ng", password: "Admin@Landevo1", role: "system_admin" },
 ];
 
 for (const account of accounts) {

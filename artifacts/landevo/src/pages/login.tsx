@@ -43,6 +43,8 @@ export default function Login() {
         navigate("/buyer");
       } else if (userRole === "commission_admin") {
         navigate("/commission");
+      } else if (userRole === "system_admin") {
+        navigate("/admin");
       } else {
         navigate("/dashboard");
       }

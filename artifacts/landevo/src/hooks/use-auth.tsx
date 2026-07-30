@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
-export type UserRole = "agent" | "buyer" | "commission_admin";
+export type UserRole = "agent" | "buyer" | "commission_admin" | "system_admin";
 
 export type AuthUser = {
   id: number;
