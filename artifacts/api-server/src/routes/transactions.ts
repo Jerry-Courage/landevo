@@ -90,6 +90,15 @@ router.get("/:id", requireAuth, async (req, res) => {
   const tx = await fetchTxById(id);
   if (!tx) return res.status(404).json({ error: "Transaction not found" });
 
+  const userId = req.session.userId!;
+  const role = req.session.userRole!;
+  const isParticipant =
+    tx.buyerId === userId ||
+    tx.agentId === userId ||
+    role === "system_admin" ||
+    role === "commission_admin";
+  if (!isParticipant) return res.status(403).json({ error: "Access denied" });
+
   return res.json(formatTx(tx as Record<string, unknown>));
 });
 

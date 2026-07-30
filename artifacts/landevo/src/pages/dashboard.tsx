@@ -4,11 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUpRight, ArrowDownRight, TrendingUp, Filter, MoreHorizontal, ShieldCheck, Clock, AlertTriangle, Building } from "lucide-react";
+import { ArrowUpRight, ArrowDownRight, TrendingUp, Filter, MoreHorizontal, ShieldCheck, Clock, AlertTriangle } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { mockListings, formatCurrency } from "@/lib/mock-data";
+import { formatCurrency } from "@/lib/mock-data";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
+import { useGetAgentDashboard, useListListings } from "@workspace/api-client-react";
 
 const chartData = [
   { name: 'Jan', newListings: 12, completedSales: 4 },
@@ -19,7 +20,41 @@ const chartData = [
   { name: 'Jun', newListings: 32, completedSales: 24 },
 ];
 
+function statusBadge(status: string) {
+  if (status === "verified" || status === "active") {
+    return (
+      <div className="flex items-center text-green-600 bg-green-50 w-fit px-2.5 py-1 rounded-md text-xs font-semibold">
+        <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Institutional Verified
+      </div>
+    );
+  }
+  if (status === "pending_verification" || status === "under_offer") {
+    return (
+      <div className="flex items-center text-amber-600 bg-amber-50 w-fit px-2.5 py-1 rounded-md text-xs font-semibold">
+        <Clock className="w-3.5 h-3.5 mr-1.5" /> Pending Audit
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center text-red-600 bg-red-50 w-fit px-2.5 py-1 rounded-md text-xs font-semibold">
+      <AlertTriangle className="w-3.5 h-3.5 mr-1.5" /> Correction Required
+    </div>
+  );
+}
+
 export default function Dashboard() {
+  const { data: dashboard } = useGetAgentDashboard();
+  const { data: listings } = useListListings();
+
+  const activeListings = dashboard?.activeListings ?? 0;
+  const totalListings = dashboard?.totalListings ?? 0;
+  const pendingVerifications = dashboard?.pendingVerifications ?? 0;
+  const totalOfferValue = dashboard?.totalOfferValue ?? 0;
+  const verifiedCount = (dashboard?.listingsByStatus as Record<string, number> | undefined)?.['verified'] ?? 0;
+  const verifiedPct = totalListings > 0 ? Math.round((verifiedCount / totalListings) * 100) : 0;
+
+  const displayListings = listings?.slice(0, 5) ?? [];
+
   return (
     <AppLayout>
       <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -41,12 +76,12 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground mb-1">TOTAL EARNINGS</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">TOTAL OFFER VALUE</p>
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold">₦ 14.2M</h3>
+                <h3 className="text-2xl font-bold">{formatCurrency(totalOfferValue)}</h3>
                 <div className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-semibold">
                   <ArrowUpRight className="w-3 h-3 mr-1" />
-                  +12.5%
+                  Live
                 </div>
               </div>
             </CardContent>
@@ -56,10 +91,10 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <p className="text-sm font-medium text-muted-foreground mb-1">ACTIVE LISTINGS</p>
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold">42</h3>
+                <h3 className="text-2xl font-bold">{activeListings}</h3>
                 <div className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-semibold">
                   <ArrowUpRight className="w-3 h-3 mr-1" />
-                  +4.2%
+                  Live
                 </div>
               </div>
             </CardContent>
@@ -69,10 +104,10 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <p className="text-sm font-medium text-muted-foreground mb-1">VERIFIED STATUS</p>
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold">94%</h3>
+                <h3 className="text-2xl font-bold">{verifiedPct}%</h3>
                 <div className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-semibold">
                   <ArrowUpRight className="w-3 h-3 mr-1" />
-                  +1.2%
+                  Live
                 </div>
               </div>
             </CardContent>
@@ -82,10 +117,10 @@ export default function Dashboard() {
             <CardContent className="p-6">
               <p className="text-sm font-medium text-muted-foreground mb-1">PENDING REVIEWS</p>
               <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold">08</h3>
-                <div className="flex items-center text-red-600 bg-red-50 px-2 py-1 rounded text-xs font-semibold">
-                  <ArrowDownRight className="w-3 h-3 mr-1" />
-                  -2.1%
+                <h3 className="text-2xl font-bold">{String(pendingVerifications).padStart(2, '0')}</h3>
+                <div className={`flex items-center px-2 py-1 rounded text-xs font-semibold ${pendingVerifications > 0 ? 'text-red-600 bg-red-50' : 'text-green-600 bg-green-50'}`}>
+                  {pendingVerifications > 0 ? <ArrowDownRight className="w-3 h-3 mr-1" /> : <ArrowUpRight className="w-3 h-3 mr-1" />}
+                  {pendingVerifications > 0 ? 'Needs action' : 'Clear'}
                 </div>
               </div>
             </CardContent>
@@ -200,43 +235,37 @@ export default function Dashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockListings.slice(0, 5).map((listing) => (
-                  <TableRow key={listing.id} className="group hover:bg-muted/30 cursor-pointer transition-colors">
-                    <TableCell className="font-medium text-xs">{listing.id}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{listing.name}</span>
-                        <span className="text-xs text-muted-foreground">{listing.location}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">{listing.size}</TableCell>
-                    <TableCell className="text-sm font-semibold text-right">{formatCurrency(listing.value)}</TableCell>
-                    <TableCell>
-                      {listing.status === "Verified" ? (
-                        <div className="flex items-center text-green-600 bg-green-50 w-fit px-2.5 py-1 rounded-md text-xs font-semibold">
-                          <ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> Institutional Verified
-                        </div>
-                      ) : listing.status === "Pending Audit" ? (
-                        <div className="flex items-center text-amber-600 bg-amber-50 w-fit px-2.5 py-1 rounded-md text-xs font-semibold">
-                          <Clock className="w-3.5 h-3.5 mr-1.5" /> Pending Audit
-                        </div>
-                      ) : (
-                        <div className="flex items-center text-red-600 bg-red-50 w-fit px-2.5 py-1 rounded-md text-xs font-semibold">
-                          <AlertTriangle className="w-3.5 h-3.5 mr-1.5" /> Correction Required
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
+                {displayListings.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground py-8 text-sm">
+                      No listings yet. <Link href="/listings/create"><span className="text-primary underline cursor-pointer">Create your first listing</span></Link>
                     </TableCell>
                   </TableRow>
-                ))}
+                ) : (
+                  displayListings.map((listing) => (
+                    <TableRow key={listing.id} className="group hover:bg-muted/30 cursor-pointer transition-colors">
+                      <TableCell className="font-medium text-xs">#{listing.id}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-foreground group-hover:text-primary transition-colors">{listing.title}</span>
+                          <span className="text-xs text-muted-foreground">{listing.city}, {listing.state}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm">{listing.areaSqm} sqm</TableCell>
+                      <TableCell className="text-sm font-semibold text-right">{formatCurrency(listing.price)}</TableCell>
+                      <TableCell>{statusBadge(listing.status)}</TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                          <MoreHorizontal className="w-4 h-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
               </TableBody>
             </Table>
             <div className="flex items-center justify-between p-4 border-t">
-              <p className="text-xs text-muted-foreground">Showing 5 of 42 properties in portfolio</p>
+              <p className="text-xs text-muted-foreground">Showing {displayListings.length} of {totalListings} properties in portfolio</p>
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="h-8 text-xs" disabled>Previous</Button>
                 <Button variant="outline" size="sm" className="h-8 text-xs">Next</Button>

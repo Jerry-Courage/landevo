@@ -41,8 +41,19 @@ router.get("/listings/:listingId/offers", requireAuth, async (req, res) => {
   const role = req.session.userRole!;
   const userId = req.session.userId!;
 
+  // Agents can only see offers on their own listings
+  if (role === "agent") {
+    const [listing] = await db
+      .select({ agentId: listingsTable.agentId })
+      .from(listingsTable)
+      .where(eq(listingsTable.id, listingId));
+    if (!listing || listing.agentId !== userId) {
+      return res.status(403).json({ error: "Not your listing" });
+    }
+  }
+
   const conditions = [eq(offersTable.listingId, listingId)];
-  // Buyers can only see their own offers; agents see all on their listings
+  // Buyers can only see their own offers
   if (role === "buyer") {
     conditions.push(eq(offersTable.buyerId, userId));
   }
@@ -117,9 +128,12 @@ router.get("/offers", requireAuth, async (req, res) => {
   const userId = req.session.userId!;
   const role = req.session.userRole!;
 
-  const conditions = role === "buyer"
-    ? [eq(offersTable.buyerId, userId)]
-    : [];
+  const conditions =
+    role === "buyer"
+      ? [eq(offersTable.buyerId, userId)]
+      : role === "agent"
+        ? [eq(listingsTable.agentId, userId)]
+        : [];
 
   const rows = await db
     .select(offerSelect())
