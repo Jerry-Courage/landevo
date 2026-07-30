@@ -1,183 +1,235 @@
 import React from "react";
 import BuyerLayout from "@/components/buyer-layout";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Clock, Lock, Download, HelpCircle, AlertCircle } from "lucide-react";
-import { mockBuyerEscrows, formatCurrency } from "@/lib/mock-data";
+import { CheckCircle2, Clock, Lock, HelpCircle, Loader2, ShieldCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useListTransactions } from "@workspace/api-client-react";
+import type { Transaction } from "@workspace/api-client-react";
+
+function formatCurrency(n: number) {
+  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" })
+    .format(n)
+    .replace("NGN", "₦");
+}
+
+const STATUS_STEPS = [
+  { key: "accepted", label: "Offer Accepted" },
+  { key: "escrow_opened", label: "Escrow Opened" },
+  { key: "funds_deposited", label: "Funds Deposited" },
+  { key: "verification_complete", label: "Commission Verified" },
+  { key: "completed", label: "Title Transferred" },
+] as const;
+
+const STATUS_ORDER = STATUS_STEPS.map((s) => s.key);
+
+function getStepState(stepKey: string, txStatus: string) {
+  const stepIdx = STATUS_ORDER.indexOf(stepKey as any);
+  const currIdx = STATUS_ORDER.indexOf(txStatus as any);
+  if (stepIdx < currIdx) return "done";
+  if (stepIdx === currIdx) return "active";
+  return "pending";
+}
+
+function statusBadge(status: string) {
+  const map: Record<string, { label: string; cls: string }> = {
+    accepted: { label: "Offer Accepted", cls: "bg-blue-100 text-blue-800 border-blue-200" },
+    escrow_opened: { label: "Escrow Opened", cls: "bg-amber-100 text-amber-800 border-amber-200" },
+    funds_deposited: { label: "Funds Deposited", cls: "bg-amber-100 text-amber-800 border-amber-200" },
+    verification_complete: { label: "Verification Complete", cls: "bg-emerald-100 text-emerald-800 border-emerald-200" },
+    completed: { label: "Completed", cls: "bg-green-100 text-green-800 border-green-200" },
+    cancelled: { label: "Cancelled", cls: "bg-red-100 text-red-800 border-red-200" },
+  };
+  const m = map[status] ?? { label: status, cls: "bg-slate-100 text-slate-700" };
+  return (
+    <Badge variant="outline" className={`${m.cls} hover:${m.cls} font-bold text-xs`}>
+      {m.label}
+    </Badge>
+  );
+}
+
+function progressPct(status: string) {
+  const idx = STATUS_ORDER.indexOf(status as any);
+  if (idx < 0) return 0;
+  return Math.round(((idx + 1) / STATUS_STEPS.length) * 100);
+}
+
+function EscrowCard({ tx }: { tx: Transaction }) {
+  const pct = progressPct(tx.status);
+
+  return (
+    <Card className="overflow-hidden border-border/60 shadow-sm">
+      <div className="border-b bg-muted/20 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Badge variant="outline" className="font-bold bg-white text-xs">
+              {tx.escrowReference ?? `TXN-${tx.id}`}
+            </Badge>
+            {statusBadge(tx.status)}
+          </div>
+          <h3 className="font-bold text-lg">{tx.listingTitle}</h3>
+        </div>
+        <div className="flex flex-col md:items-end">
+          <span className="text-xs font-bold text-muted-foreground mb-1">PROGRESS</span>
+          <span className="font-bold text-lg text-primary">{pct}% Complete</span>
+        </div>
+      </div>
+
+      <div className="bg-primary/5 px-6 py-1">
+        <div className="w-full bg-primary/20 h-1.5 rounded-full overflow-hidden my-3">
+          <div className="bg-primary h-full rounded-full transition-all" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      <div className="flex flex-col md:flex-row">
+        {/* Left: amounts */}
+        <div className="flex-1 p-6 md:border-r border-b md:border-b-0 space-y-6">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">
+                AGREED AMOUNT
+              </p>
+              <p className="font-bold text-lg">{formatCurrency(tx.agreedAmount)}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">
+                OFFER AMOUNT
+              </p>
+              <p className="font-bold text-lg text-primary">{formatCurrency(tx.offerAmount)}</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-2">
+              MANAGING AGENT
+            </p>
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs">
+                {(tx.agentName ?? "?")
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .substring(0, 2)
+                  .toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-bold">{tx.agentName}</p>
+                <p className="text-xs text-muted-foreground">Agent</p>
+              </div>
+            </div>
+          </div>
+
+          {tx.status === "completed" && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
+              <ShieldCheck className="w-5 h-5 text-green-600 flex-shrink-0" />
+              <p className="text-sm font-bold text-green-800">
+                Transaction complete. Title has been transferred.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Right: timeline */}
+        <div className="w-full md:w-[300px] bg-card p-6 flex flex-col">
+          <h4 className="font-bold text-sm tracking-wider text-muted-foreground mb-6">
+            PROCESS STEPS
+          </h4>
+
+          <div className="space-y-5 relative before:absolute before:inset-0 before:ml-3 before:h-full before:w-0.5 before:bg-border mb-6">
+            {STATUS_STEPS.map((step) => {
+              const state = getStepState(step.key, tx.status);
+              return (
+                <div key={step.key} className="relative flex items-center gap-4 pl-2">
+                  <div
+                    className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 ${
+                      state === "done"
+                        ? "border-green-500 bg-white"
+                        : state === "active"
+                        ? "border-amber-500 bg-white"
+                        : "border-muted bg-muted"
+                    }`}
+                  >
+                    {state === "done" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    {state === "active" && (
+                      <Clock className="w-3 h-3 text-amber-500 animate-pulse" />
+                    )}
+                    {state === "pending" && <Lock className="w-3 h-3 text-muted-foreground" />}
+                  </div>
+                  <div>
+                    <p
+                      className={`text-sm font-bold ${
+                        state === "active"
+                          ? "text-amber-600"
+                          : state === "pending"
+                          ? "text-muted-foreground"
+                          : "text-foreground"
+                      }`}
+                    >
+                      {step.label}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground font-medium">
+                      {state === "done"
+                        ? new Date(tx.updatedAt).toLocaleDateString("en-NG", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : state === "active"
+                        ? "In Progress"
+                        : "Locked"}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-auto">
+            <Button variant="ghost" className="w-full text-xs font-medium text-muted-foreground hover:text-foreground">
+              <HelpCircle className="w-4 h-4 mr-1" /> Need Help?
+            </Button>
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
 
 export default function BuyerEscrow() {
+  const { data: transactions = [], isLoading } = useListTransactions();
+
   return (
     <BuyerLayout>
       <div className="p-6 md:p-8 max-w-5xl mx-auto space-y-6">
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Escrow Tracker</h1>
-          <p className="text-muted-foreground mt-1 text-sm">Track your land purchase escrow transactions securely.</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            Track your land purchase escrow transactions securely.
+          </p>
         </div>
 
+        {isLoading && (
+          <div className="flex items-center justify-center py-20 text-muted-foreground">
+            <Loader2 className="w-6 h-6 animate-spin mr-2" /> Loading transactions…
+          </div>
+        )}
+
+        {!isLoading && transactions.length === 0 && (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center py-20 text-center">
+              <ShieldCheck className="w-10 h-10 text-muted-foreground mb-3" />
+              <p className="font-semibold text-foreground">No active escrows</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                When an agent accepts your offer, your escrow will appear here.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         <div className="space-y-8">
-          {/* Escrow Card 1 (Active) */}
-          <Card className="overflow-hidden border-border/60 shadow-sm">
-            <div className="border-b bg-muted/20 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className="font-bold bg-white text-xs">ESC-294821-X</Badge>
-                  <Badge variant="warning" className="bg-amber-100 text-amber-800 border-amber-200 hover:bg-amber-100">Funds Secured in Escrow</Badge>
-                </div>
-                <h3 className="font-bold text-lg">Epe Waterfront Estate - Plot 42</h3>
-              </div>
-              <div className="flex flex-col md:items-end">
-                <span className="text-xs font-bold text-muted-foreground mb-1">PROGRESS</span>
-                <span className="font-bold text-lg text-primary">60% Complete</span>
-              </div>
-            </div>
-            
-            <div className="bg-primary/5 px-6 py-1">
-              <div className="w-full bg-primary/20 h-1.5 rounded-full overflow-hidden my-3">
-                <div className="bg-primary h-full rounded-full" style={{ width: '60%' }}></div>
-              </div>
-            </div>
-
-            <div className="flex flex-col md:flex-row">
-              {/* Left Details */}
-              <div className="flex-1 p-6 md:border-r border-b md:border-b-0 space-y-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">TOTAL ESCROW VALUE</p>
-                    <p className="font-bold text-lg">{formatCurrency(125000000)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">CURRENT BALANCE</p>
-                    <p className="font-bold text-lg text-primary">{formatCurrency(115625000)}</p>
-                  </div>
-                </div>
-
-                <div className="bg-amber-50 border border-amber-100 rounded-lg p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <AlertCircle className="w-4 h-4 text-amber-600" />
-                    <h4 className="font-bold text-xs text-amber-800 tracking-wider">ACTION REQUIRED</h4>
-                  </div>
-                  <p className="text-sm font-medium text-amber-900 leading-relaxed">
-                    The Land Commission is currently auditing the structural survey reports. The next 20% of funds will be released for legal titling fees upon completion.
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-2">MANAGING AGENT</p>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs">AS</div>
-                    <div>
-                      <p className="text-sm font-bold">Alex Sterling</p>
-                      <p className="text-xs text-muted-foreground">Sterling Prime Real Estate</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Timeline */}
-              <div className="w-full md:w-[320px] bg-card p-6 flex flex-col">
-                <h4 className="font-bold text-sm tracking-wider text-muted-foreground mb-6">PROCESS STEPS</h4>
-                
-                <div className="space-y-6 relative before:absolute before:inset-0 before:ml-2.5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-border mb-8">
-                  {/* Step 1 */}
-                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-green-500 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    </div>
-                    <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] ml-4 md:ml-0 flex flex-col md:group-odd:items-end">
-                      <p className="text-sm font-bold text-foreground">Offer Accepted</p>
-                      <p className="text-[10px] text-muted-foreground font-medium">Oct 12, 2023</p>
-                    </div>
-                  </div>
-                  {/* Step 2 */}
-                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-green-500 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    </div>
-                    <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] ml-4 md:ml-0 flex flex-col md:group-odd:items-end">
-                      <p className="text-sm font-bold text-foreground">Funds Deposited</p>
-                      <p className="text-[10px] text-muted-foreground font-medium">Oct 14, 2023</p>
-                    </div>
-                  </div>
-                  {/* Step 3 */}
-                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-green-500 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    </div>
-                    <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] ml-4 md:ml-0 flex flex-col md:group-odd:items-end">
-                      <p className="text-sm font-bold text-foreground">Commission Audit</p>
-                      <p className="text-[10px] text-muted-foreground font-medium">Oct 15, 2023</p>
-                    </div>
-                  </div>
-                  {/* Step 4 */}
-                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-amber-500 bg-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      <Clock className="w-3 h-3 text-amber-500 animate-pulse" />
-                    </div>
-                    <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] ml-4 md:ml-0 flex flex-col md:group-odd:items-end">
-                      <p className="text-sm font-bold text-amber-600">Title Verification</p>
-                      <p className="text-[10px] text-muted-foreground font-medium">In Progress</p>
-                    </div>
-                  </div>
-                  {/* Step 5 */}
-                  <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group">
-                    <div className="flex items-center justify-center w-6 h-6 rounded-full border-2 border-muted bg-muted shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 z-10">
-                      <Lock className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                    <div className="w-[calc(100%-2rem)] md:w-[calc(50%-1.5rem)] ml-4 md:ml-0 flex flex-col md:group-odd:items-end">
-                      <p className="text-sm font-bold text-muted-foreground">Final Release</p>
-                      <p className="text-[10px] text-muted-foreground font-medium">Locked</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-auto space-y-3">
-                  <Button variant="outline" className="w-full text-xs font-bold gap-2">
-                    <Download className="w-4 h-4" /> Download Receipt
-                  </Button>
-                  <Button variant="ghost" className="w-full text-xs font-medium text-muted-foreground hover:text-foreground">
-                    <HelpCircle className="w-4 h-4 mr-1" /> Need Help?
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Card>
-
-          {/* Escrow Card 2 (Pending) */}
-          <Card className="overflow-hidden border-border/60 shadow-sm opacity-80">
-            <div className="border-b bg-muted/10 px-6 py-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Badge variant="outline" className="font-bold bg-white text-xs">ESC-295104-X</Badge>
-                  <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-100">Awaiting Approval</Badge>
-                </div>
-                <h3 className="font-bold text-lg">Prime Waterfront Commercial Plot</h3>
-              </div>
-              <div className="flex flex-col md:items-end">
-                <span className="text-xs font-bold text-muted-foreground mb-1">PROGRESS</span>
-                <span className="font-bold text-lg text-slate-600">15% Complete</span>
-              </div>
-            </div>
-            
-            <div className="bg-slate-50 px-6 py-1">
-              <div className="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden my-3">
-                <div className="bg-slate-500 h-full rounded-full" style={{ width: '15%' }}></div>
-              </div>
-            </div>
-
-            <div className="p-6">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <p className="text-[10px] font-bold text-muted-foreground tracking-wider">TOTAL ESCROW VALUE</p>
-                  <p className="font-bold text-lg text-muted-foreground">{formatCurrency(245000000)}</p>
-                </div>
-                <div className="text-right space-y-1">
-                  <p className="text-[10px] font-bold text-muted-foreground tracking-wider">STATUS</p>
-                  <p className="text-sm font-bold text-slate-600">Offer made, pending Commission review.</p>
-                </div>
-              </div>
-            </div>
-          </Card>
+          {transactions.map((tx: Transaction) => (
+            <EscrowCard key={tx.id} tx={tx} />
+          ))}
         </div>
       </div>
     </BuyerLayout>
