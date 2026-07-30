@@ -138,17 +138,33 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
     return res.status(400).json({ error: "Transaction is already finalised" });
   }
 
-  const allowedTransitions: Record<string, string[]> = {
-    // buyer: deposit funds; anyone: move to escrow or cancel
+  // Which statuses each role is permitted to set
+  const allowedByRole: Record<string, string[]> = {
     buyer:            ["escrow_opened", "funds_deposited", "cancelled"],
     agent:            ["escrow_opened", "cancelled"],
     commission_admin: ["escrow_opened", "funds_deposited", "verification_complete", "completed", "cancelled"],
     system_admin:     ["escrow_opened", "funds_deposited", "verification_complete", "completed", "cancelled"],
   };
 
-  const allowed = allowedTransitions[role] ?? [];
-  if (!allowed.includes(status)) {
+  const roleAllowed = allowedByRole[role] ?? [];
+  if (!roleAllowed.includes(status)) {
     return res.status(403).json({ error: `Role '${role}' cannot set status '${status}'` });
+  }
+
+  // Forward-only validation: each status may only be reached from specific predecessor states
+  const validFromStates: Record<string, string[]> = {
+    escrow_opened:         ["accepted"],
+    funds_deposited:       ["escrow_opened"],
+    verification_complete: ["funds_deposited"],
+    completed:             ["verification_complete"],
+    cancelled:             ["accepted", "escrow_opened", "funds_deposited"],
+  };
+
+  const validFrom = validFromStates[status];
+  if (validFrom && !validFrom.includes(existing.status)) {
+    return res.status(400).json({
+      error: `Cannot transition from '${existing.status}' to '${status}'`,
+    });
   }
 
   await db

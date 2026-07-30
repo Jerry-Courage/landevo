@@ -13,6 +13,7 @@ import { createNotification } from "../lib/notify";
 
 const router = Router();
 
+/** Build a single thread response (used after create/message operations). */
 async function buildThreadResponse(threadId: number, currentUserId: number) {
   const thread = await db
     .select({
@@ -65,24 +66,91 @@ async function buildThreadResponse(threadId: number, currentUserId: number) {
 }
 
 // GET /api/threads
+// Fetches all threads in 4 batched queries instead of 3 queries × N threads.
 router.get("/threads", requireAuth, async (req, res) => {
   const userId = req.session.userId!;
 
-  const myThreadIds = await db
-    .select({ threadId: threadParticipantsTable.threadId })
+  const myParticipations = await db
+    .select({ threadId: threadParticipantsTable.threadId, unreadCount: threadParticipantsTable.unreadCount })
     .from(threadParticipantsTable)
     .where(eq(threadParticipantsTable.userId, userId));
 
-  if (myThreadIds.length === 0) return res.json([]);
+  if (myParticipations.length === 0) return res.json([]);
 
-  const ids = myThreadIds.map((r) => r.threadId);
-  const threads = await Promise.all(ids.map((id) => buildThreadResponse(id, userId)));
+  const ids = myParticipations.map((r) => r.threadId);
+  const unreadByThread = new Map(myParticipations.map((r) => [r.threadId, r.unreadCount]));
 
-  return res.json(threads.filter(Boolean).sort((a, b) => {
-    const ta = a!.lastMessageAt ?? a!.createdAt.toISOString();
-    const tb = b!.lastMessageAt ?? b!.createdAt.toISOString();
-    return tb.localeCompare(ta);
+  // Batch 1: thread metadata + listing titles
+  const threads = await db
+    .select({
+      id: messageThreadsTable.id,
+      listingId: messageThreadsTable.listingId,
+      listingTitle: listingsTable.title,
+      lastMessageAt: messageThreadsTable.lastMessageAt,
+      createdAt: messageThreadsTable.createdAt,
+    })
+    .from(messageThreadsTable)
+    .leftJoin(listingsTable, eq(messageThreadsTable.listingId, listingsTable.id))
+    .where(inArray(messageThreadsTable.id, ids));
+
+  // Batch 2: all participants for all threads
+  const allParticipants = await db
+    .select({
+      threadId: threadParticipantsTable.threadId,
+      userId: threadParticipantsTable.userId,
+      name: usersTable.name,
+      role: usersTable.role,
+    })
+    .from(threadParticipantsTable)
+    .innerJoin(usersTable, eq(threadParticipantsTable.userId, usersTable.id))
+    .where(inArray(threadParticipantsTable.threadId, ids));
+
+  // Batch 3: last message per thread via a single query
+  const lastMessages = await db
+    .select({
+      threadId: messagesTable.threadId,
+      content: messagesTable.content,
+      createdAt: messagesTable.createdAt,
+    })
+    .from(messagesTable)
+    .where(
+      sql`(${messagesTable.threadId}, ${messagesTable.createdAt}) IN (
+        SELECT thread_id, MAX(created_at) FROM messages
+        WHERE thread_id = ANY(${sql.raw(`ARRAY[${ids.join(",")}]`)})
+        GROUP BY thread_id
+      )`,
+    );
+
+  // Build lookup maps
+  const participantsByThread = new Map<number, typeof allParticipants>();
+  for (const p of allParticipants) {
+    if (!participantsByThread.has(p.threadId)) participantsByThread.set(p.threadId, []);
+    participantsByThread.get(p.threadId)!.push(p);
+  }
+  const lastMessageByThread = new Map(lastMessages.map((m) => [m.threadId, m.content]));
+
+  const result = threads.map((t) => ({
+    id: t.id,
+    listingId: t.listingId,
+    listingTitle: t.listingTitle ?? null,
+    participants: (participantsByThread.get(t.id) ?? []).map((p) => ({
+      id: p.userId,
+      name: p.name,
+      role: p.role,
+    })),
+    lastMessage: lastMessageByThread.get(t.id) ?? null,
+    lastMessageAt: t.lastMessageAt?.toISOString() ?? null,
+    unreadCount: unreadByThread.get(t.id) ?? 0,
+    createdAt: t.createdAt,
   }));
+
+  result.sort((a, b) => {
+    const ta = a.lastMessageAt ?? a.createdAt.toISOString();
+    const tb = b.lastMessageAt ?? b.createdAt.toISOString();
+    return tb.localeCompare(ta);
+  });
+
+  return res.json(result);
 });
 
 // POST /api/threads
@@ -100,6 +168,35 @@ router.post("/threads", requireAuth, async (req, res) => {
   const senderId = req.session.userId!;
   if (senderId === recipientId) {
     return res.status(400).json({ error: "Cannot message yourself" });
+  }
+
+  // Return the existing thread if one already exists between these two users
+  // for the same listing (or both without a listing), to prevent duplicates.
+  const existing = await db
+    .select({ threadId: threadParticipantsTable.threadId })
+    .from(threadParticipantsTable)
+    .innerJoin(
+      messageThreadsTable,
+      eq(threadParticipantsTable.threadId, messageThreadsTable.id),
+    )
+    .where(
+      and(
+        eq(threadParticipantsTable.userId, senderId),
+        listingId
+          ? eq(messageThreadsTable.listingId, listingId)
+          : sql`${messageThreadsTable.listingId} IS NULL`,
+        sql`EXISTS (
+          SELECT 1 FROM thread_participants tp2
+          WHERE tp2.thread_id = ${threadParticipantsTable.threadId}
+            AND tp2.user_id = ${recipientId}
+        )`,
+      ),
+    )
+    .limit(1);
+
+  if (existing.length > 0) {
+    const result = await buildThreadResponse(existing[0].threadId, senderId);
+    return res.status(200).json(result);
   }
 
   const [thread] = await db

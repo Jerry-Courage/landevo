@@ -174,43 +174,48 @@ router.patch("/offers/:id/accept", requireRole("agent"), async (req, res) => {
     return res.status(403).json({ error: "Not your listing" });
   }
 
-  // Accept the offer
-  await db
-    .update(offersTable)
-    .set({ status: "accepted" })
-    .where(eq(offersTable.id, id));
-
-  // Reject all other pending offers on the same listing
-  await db
-    .update(offersTable)
-    .set({ status: "rejected" })
-    .where(
-      and(
-        eq(offersTable.listingId, offer.listingId),
-        eq(offersTable.status, "pending"),
-      ),
-    );
-
-  // Update listing status
-  await db
-    .update(listingsTable)
-    .set({ status: "under_offer", updatedAt: new Date() })
-    .where(eq(listingsTable.id, offer.listingId));
-
-  // Create transaction
+  // All mutations are atomic: if transaction insert fails the offer/listing
+  // changes are rolled back and no partial state is saved.
   const escrowRef = `ESC-${Date.now()}-${Math.random().toString(36).slice(2, 7).toUpperCase()}`;
-  await db.insert(transactionsTable).values({
-    listingId: offer.listingId,
-    buyerId: offer.buyerId,
-    agentId: req.session.userId!,
-    offerId: offer.id,
-    offerAmount: offer.amount,
-    agreedAmount: offer.amount,
-    status: "accepted",
-    escrowReference: escrowRef,
+
+  await db.transaction(async (tx) => {
+    // Accept the offer
+    await tx
+      .update(offersTable)
+      .set({ status: "accepted" })
+      .where(eq(offersTable.id, id));
+
+    // Reject all other pending offers on the same listing
+    await tx
+      .update(offersTable)
+      .set({ status: "rejected" })
+      .where(
+        and(
+          eq(offersTable.listingId, offer.listingId),
+          eq(offersTable.status, "pending"),
+        ),
+      );
+
+    // Update listing status
+    await tx
+      .update(listingsTable)
+      .set({ status: "under_offer", updatedAt: new Date() })
+      .where(eq(listingsTable.id, offer.listingId));
+
+    // Create the escrow transaction record
+    await tx.insert(transactionsTable).values({
+      listingId: offer.listingId,
+      buyerId: offer.buyerId,
+      agentId: req.session.userId!,
+      offerId: offer.id,
+      offerAmount: offer.amount,
+      agreedAmount: offer.amount,
+      status: "accepted",
+      escrowReference: escrowRef,
+    });
   });
 
-  // Notify the buyer
+  // Notify the buyer (best-effort, outside the transaction)
   await createNotification({
     userId: offer.buyerId,
     type: "offer_accepted",

@@ -1,4 +1,4 @@
-import express, { type Express } from "express";
+import express, { type Express, type Request, type Response, type NextFunction } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
@@ -64,5 +64,15 @@ app.use(
 );
 
 app.use("/api", router);
+
+// Global error handler — catches any error thrown or passed to next() in async routes.
+// Express 5 automatically forwards async rejections; this ensures they all produce
+// a consistent JSON response instead of hanging or crashing the process.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  logger.error({ err }, "Unhandled error");
+  if (res.headersSent) return;
+  res.status(500).json({ error: "Internal server error" });
+});
 
 export default app;

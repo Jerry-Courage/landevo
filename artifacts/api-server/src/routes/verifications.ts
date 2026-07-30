@@ -135,6 +135,10 @@ router.patch("/:id/assign", requireRole("commission_admin"), async (req, res) =>
 
   if (!v) return res.status(404).json({ error: "Verification not found" });
 
+  if (!["pending", "in_review"].includes(v.status)) {
+    return res.status(400).json({ error: "Verification has already been resolved" });
+  }
+
   await db
     .update(verificationsTable)
     .set({ officerId, status: "in_review" })

@@ -153,7 +153,10 @@ router.get("/buyer", requireRole("buyer"), async (req, res) => {
       propertyType: listingsTable.propertyType,
       status: listingsTable.status,
       images: listingsTable.images,
-      verificationId: sql<number | null>`null`,
+      verificationId: sql<number | null>`(
+        SELECT id FROM verifications WHERE listing_id = ${listingsTable.id}
+        ORDER BY created_at DESC LIMIT 1
+      )`,
       createdAt: listingsTable.createdAt,
       updatedAt: listingsTable.updatedAt,
     })
