@@ -50,7 +50,7 @@ export default function BuyerMessages() {
         </div>
 
         {/* Middle Panel - Chat */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#F8F9FA] hidden md:flex">
+        <div className="flex-1 flex flex-col min-w-0 bg-muted/30 hidden md:flex">
           {/* Chat Header */}
           <div className="h-16 border-b bg-card flex items-center justify-between px-6 flex-shrink-0">
             <div className="flex items-center gap-3">
@@ -76,13 +76,26 @@ export default function BuyerMessages() {
 
           {/* Chat Area */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6">
+
+            {/* Property Inquiry Context Banner */}
+            <div className="flex items-center gap-3 bg-card border rounded-lg p-3 shadow-sm">
+              <div className="w-12 h-10 rounded-md overflow-hidden flex-shrink-0">
+                <div className="w-full h-full bg-gradient-to-br from-teal-900 to-slate-800"></div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] font-bold text-muted-foreground tracking-wider">INQUIRY FOR</p>
+                <p className="text-sm font-bold truncate">Prime Waterfront Commercial Plot</p>
+              </div>
+              <Button variant="outline" size="sm" className="text-xs font-bold flex-shrink-0">View →</Button>
+            </div>
+
             <div className="flex justify-center">
               <Badge variant="outline" className="bg-background text-[10px] font-semibold text-muted-foreground px-3 py-1">TODAY</Badge>
             </div>
 
             <div className="flex gap-3 max-w-[80%] ml-auto justify-end">
               <div className="text-right">
-                <div className="bg-[#1B4332] text-white rounded-2xl rounded-tr-sm p-3 shadow-sm text-sm">
+                <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm p-3 shadow-sm text-sm">
                   Hi Alex! I'm interested in the Prime Waterfront Commercial Plot. Is the ₦245M negotiable?
                 </div>
                 <div className="flex items-center justify-end gap-1 mt-1 mr-1">
@@ -104,7 +117,7 @@ export default function BuyerMessages() {
 
             <div className="flex gap-3 max-w-[80%] ml-auto justify-end">
               <div className="text-right">
-                <div className="bg-[#1B4332] text-white rounded-2xl rounded-tr-sm p-3 shadow-sm text-sm">
+                <div className="bg-primary text-primary-foreground rounded-2xl rounded-tr-sm p-3 shadow-sm text-sm">
                   I can go up to ₦240M if you can guarantee the C of O is processed within 60 days.
                 </div>
                 <div className="flex items-center justify-end gap-1 mt-1 mr-1">
@@ -137,7 +150,7 @@ export default function BuyerMessages() {
                 placeholder="Type a message to Alex..."
                 rows={1}
               ></textarea>
-              <Button size="icon" className="w-9 h-9 rounded-md mb-0.5 bg-[#1B4332] hover:bg-[#1B4332]/90"><Send className="w-4 h-4 ml-0.5" /></Button>
+              <Button size="icon" className="w-9 h-9 rounded-md mb-0.5 bg-primary hover:bg-primary/90"><Send className="w-4 h-4 ml-0.5" /></Button>
             </div>
             <div className="flex justify-between items-center mt-2 px-1">
               <span className="text-[10px] text-muted-foreground font-medium">Press Enter to send, Shift + Enter for new line</span>

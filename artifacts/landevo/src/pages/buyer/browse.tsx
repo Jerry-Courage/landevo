@@ -78,12 +78,27 @@ export default function BuyerBrowse() {
         </div>
 
         {/* Right Main Content */}
-        <div className="flex-1 flex flex-col min-w-0 bg-[#F8F9FA] overflow-y-auto">
+        <div className="flex-1 flex flex-col min-w-0 bg-background overflow-y-auto">
           <div className="p-6 md:p-8 max-w-6xl mx-auto w-full">
             
             <div className="mb-6">
               <h1 className="text-3xl font-bold tracking-tight text-foreground mb-2">Browse Verified Properties</h1>
               <p className="text-muted-foreground text-sm">Find securely vetted land for your next big project.</p>
+            </div>
+
+            {/* Active filter chips / result count */}
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-sm font-semibold text-muted-foreground">
+                Showing <span className="text-foreground font-bold">126 verified properties</span>
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
+                  Lagos State <button className="ml-1 hover:text-destructive">×</button>
+                </span>
+                <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
+                  Residential <button className="ml-1 hover:text-destructive">×</button>
+                </span>
+              </div>
             </div>
 
             {/* Filter Bar */}
@@ -161,7 +176,7 @@ export default function BuyerBrowse() {
                           <Heart className="w-4 h-4" /> Save
                         </Button>
                         <Link href={`/buyer/property/${listing.id}`} className="flex-1">
-                          <Button className="w-full text-xs font-bold bg-[#1B4332] hover:bg-[#1B4332]/90">
+                          <Button className="w-full text-xs font-bold bg-primary hover:bg-primary/90">
                             Make Offer
                           </Button>
                         </Link>
@@ -170,6 +185,28 @@ export default function BuyerBrowse() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+
+            {/* Recently Verified Near You */}
+            <div className="mb-8 p-6 bg-card border rounded-xl shadow-sm">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="w-4 h-4 text-primary" />
+                <h3 className="font-bold text-sm">Recently Verified Near You</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {mockListings.slice(0, 3).map((listing, i) => (
+                  <Link key={`recent-${listing.id}`} href={`/buyer/property/${listing.id}`}>
+                    <div className="flex items-center gap-3 p-3 border rounded-lg hover:border-primary/40 hover:bg-primary/5 transition-colors cursor-pointer group">
+                      <div className={`w-10 h-10 rounded-md flex-shrink-0 bg-gradient-to-br ${i === 0 ? 'from-teal-900 to-slate-800' : i === 1 ? 'from-slate-800 to-green-900' : 'from-slate-700 to-emerald-900'}`}></div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold line-clamp-1 group-hover:text-primary transition-colors">{listing.name}</p>
+                        <p className="text-[10px] text-muted-foreground">{listing.location}</p>
+                        <p className="text-[10px] font-bold text-primary mt-0.5">{formatCurrency(listing.value)}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
             </div>
 
             {/* Pagination */}

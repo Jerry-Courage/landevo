@@ -19,21 +19,21 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar */}
-      <div className="w-[200px] flex-shrink-0 bg-[#1A2E22] flex flex-col text-white border-r border-[#1A2E22] hidden md:flex z-10 shadow-xl">
-        <div className="h-16 flex items-center px-6 gap-3 flex-shrink-0 border-b border-white/10">
-          <Compass className="w-6 h-6 text-white" />
+      <div className="w-[200px] flex-shrink-0 bg-sidebar flex flex-col text-sidebar-foreground border-r border-sidebar-border hidden md:flex z-10 shadow-xl">
+        <div className="h-16 flex items-center px-6 gap-3 flex-shrink-0 border-b border-sidebar-border/30">
+          <Compass className="w-6 h-6 text-sidebar-foreground" />
           <span className="font-bold text-lg tracking-tight">Landevo</span>
         </div>
         
         <div className="flex-1 overflow-y-auto py-6 px-3 flex flex-col gap-1">
-          <div className="px-3 mb-2 text-xs font-semibold text-white/50 tracking-wider">BUYER PORTAL</div>
+          <div className="px-3 mb-2 text-xs font-semibold text-sidebar-foreground/50 tracking-wider">BUYER PORTAL</div>
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = location === item.path || (location.startsWith(item.path + "/") && item.path !== "/buyer");
             return (
               <Link key={item.path} href={item.path} className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-                isActive ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/5 hover:text-white"
+                isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               )}>
                 <Icon className="w-4 h-4" />
                 {item.label}
@@ -42,15 +42,15 @@ export default function BuyerLayout({ children }: { children: React.ReactNode })
           })}
         </div>
 
-        <div className="p-4 border-t border-white/10">
-          <Link href="/buyer/settings" className="flex items-center gap-3 hover:bg-white/5 p-2 rounded-md transition-colors">
-            <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center font-bold text-xs text-white relative">
+        <div className="p-4 border-t border-sidebar-border/30">
+          <Link href="/buyer/settings" className="flex items-center gap-3 hover:bg-sidebar-accent/50 p-2 rounded-md transition-colors">
+            <div className="w-8 h-8 rounded-full bg-sidebar-primary flex items-center justify-center font-bold text-xs text-sidebar-foreground relative">
               BM
-              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-[#1A2E22]"></span>
+              <span className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-sidebar"></span>
             </div>
             <div className="flex flex-col">
-              <span className="text-sm font-medium leading-none mb-1 text-white">Babatunde M.</span>
-              <span className="text-[10px] text-white/60 leading-none">Verified Buyer</span>
+              <span className="text-sm font-medium leading-none mb-1">Babatunde M.</span>
+              <span className="text-[10px] text-sidebar-foreground/60 leading-none">Verified Buyer</span>
             </div>
           </Link>
         </div>
