@@ -4,12 +4,27 @@ A real estate platform for property agents and buyers — agents list, verify, a
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- **Frontend** (port 5173): workflow `Landevo Frontend` — `PORT=5173 BASE_PATH=/ pnpm --filter @workspace/landevo run dev`
+- **API** (port 8080): workflow `API Server` — `PORT=8080 pnpm --filter @workspace/api-server run dev`
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required env: `DATABASE_URL` (Replit-managed), `SESSION_SECRET` (Replit secret)
+
+## Auth
+
+Session-based auth (express-session + connect-pg-simple, 30-day cookies).
+
+- `POST /api/auth/register` — `{ name, email, password, role: "agent"|"buyer" }`
+- `POST /api/auth/login` — `{ email, password }`
+- `POST /api/auth/logout`
+- `GET /api/auth/me` — returns current user or 401
+
+Roles:
+- **agent** → `/dashboard` and all agent routes
+- **buyer** → `/buyer` and all buyer routes
+- **commission_admin** → agent area (admin page at `/admin`)
 
 ## Stack
 
