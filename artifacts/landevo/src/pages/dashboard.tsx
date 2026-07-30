@@ -28,7 +28,7 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Overview Dashboard</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Monitor your property portfolio and verification statuses.</p>
+            <p className="text-muted-foreground mt-1 text-sm">Monitor your property portfolio and sales performance.</p>
           </div>
           <div className="flex gap-3">
             <Link href="/buyer">
@@ -45,7 +45,7 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground mb-1">TOTAL COMMISSION</p>
+              <p className="text-sm font-medium text-muted-foreground mb-1">TOTAL EARNINGS</p>
               <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold">₦ 14.2M</h3>
                 <div className="flex items-center text-green-600 bg-green-50 px-2 py-1 rounded text-xs font-semibold">
@@ -133,8 +133,8 @@ export default function Dashboard() {
 
           <Card className="flex flex-col shadow-sm">
             <CardHeader className="pb-4">
-              <CardTitle>Verifications</CardTitle>
-              <CardDescription>Recent audit activity</CardDescription>
+              <CardTitle>Document Status</CardTitle>
+              <CardDescription>Recent document activity</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 flex flex-col gap-6">
               <div className="flex flex-col gap-4">
@@ -184,7 +184,7 @@ export default function Dashboard() {
           <CardHeader className="flex flex-row items-center justify-between pb-4">
             <div>
               <CardTitle>Active Asset Inventory</CardTitle>
-              <CardDescription>Managed listings and verification status across commissions.</CardDescription>
+              <CardDescription>All active properties in your portfolio.</CardDescription>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="h-8"><Filter className="w-3 h-3 mr-2"/> Filter</Button>

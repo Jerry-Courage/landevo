@@ -22,9 +22,16 @@ Session-based auth (express-session + connect-pg-simple, 30-day cookies).
 - `GET /api/auth/me` — returns current user or 401
 
 Roles:
-- **agent** → `/dashboard` and all agent routes
-- **buyer** → `/buyer` and all buyer routes
-- **commission_admin** → agent area (admin page at `/admin`)
+- **agent** → `/dashboard` and agent sidebar (Dashboard, Marketplace, Transactions, Messages, Settings)
+- **buyer** → `/buyer` and buyer portal
+- **commission_admin** → `/commission` and dedicated Land Commission portal (Dashboard, Agent Verifications, Listing Audits, Activity Log, Officers)
+
+Commission admins cannot self-register — they must be provisioned directly in the DB (INSERT with role `commission_admin`).
+
+## Test Accounts
+- Agent: `agent@test.com` / `password123`
+- Buyer: `buyer@test.com` / `password123`
+- Commission: `commission@landevo.ng` / `commission123`
 
 ## Stack
 

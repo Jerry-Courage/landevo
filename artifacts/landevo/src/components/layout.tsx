@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Compass, LayoutDashboard, Store, ArrowRightLeft, MessageSquare, ShieldCheck, Settings, Shield, Bell, Search, LogOut } from "lucide-react";
+import { Compass, LayoutDashboard, Store, ArrowRightLeft, MessageSquare, Settings, Bell, Search, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -9,8 +9,6 @@ const NAV_ITEMS = [
   { path: "/marketplace", label: "Marketplace", icon: Store },
   { path: "/transactions", label: "Transactions", icon: ArrowRightLeft },
   { path: "/messages", label: "Messages", icon: MessageSquare },
-  { path: "/verification", label: "Verification", icon: ShieldCheck },
-  { path: "/admin", label: "Administration", icon: Shield },
   { path: "/settings", label: "Settings", icon: Settings },
 ];
 

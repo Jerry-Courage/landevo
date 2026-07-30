@@ -50,10 +50,7 @@ if (!process.env.SESSION_SECRET) {
 app.use(
   session({
     name: "sid",
-    store: new PgStore({
-      pool,
-      createTableIfMissing: true,
-    }),
+    store: new PgStore({ pool }),
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,

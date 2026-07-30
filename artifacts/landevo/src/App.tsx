@@ -23,27 +23,48 @@ import BuyerMessages from '@/pages/buyer/messages';
 import BuyerNotifications from '@/pages/buyer/notifications';
 import BuyerSettings from '@/pages/buyer/settings';
 
+// Commission Pages
+import CommissionDashboard from '@/pages/commission/dashboard';
+import CommissionVerifications from '@/pages/commission/verifications';
+import CommissionListings from '@/pages/commission/listings';
+import CommissionAudit from '@/pages/commission/audit';
+import CommissionOfficers from '@/pages/commission/officers';
+
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 
-/** Redirects to /login if not authenticated. For agents/commission only. */
+function LoadingScreen() {
+  return <div className="flex h-screen items-center justify-center text-muted-foreground text-sm">Loading…</div>;
+}
+
+/** Agent-only routes */
 function AgentRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="flex h-screen items-center justify-center text-muted-foreground text-sm">Loading…</div>;
+  if (loading) return <LoadingScreen />;
   if (!user) return <Redirect to="/login" />;
   if (user.role === 'buyer') return <Redirect to="/buyer" />;
+  if (user.role === 'commission_admin') return <Redirect to="/commission" />;
   return <Component />;
 }
 
-/** Redirects to /login if not authenticated. For buyers only. */
+/** Buyer-only routes */
 function BuyerRoute({ component: Component }: { component: React.ComponentType }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="flex h-screen items-center justify-center text-muted-foreground text-sm">Loading…</div>;
+  if (loading) return <LoadingScreen />;
   if (!user) return <Redirect to="/login" />;
   if (user.role !== 'buyer') return <Redirect to="/dashboard" />;
   return <Component />;
 }
 
-/** Root redirect: send to the right home based on role. */
+/** Commission-admin-only routes */
+function CommissionRoute({ component: Component }: { component: React.ComponentType }) {
+  const { user, loading } = useAuth();
+  if (loading) return <LoadingScreen />;
+  if (!user) return <Redirect to="/login" />;
+  if (user.role !== 'commission_admin') return <Redirect to="/dashboard" />;
+  return <Component />;
+}
+
+/** Root redirect: send to the right home based on role */
 function RootRedirect() {
   const { user, loading } = useAuth();
   const [, navigate] = useLocation();
@@ -51,6 +72,7 @@ function RootRedirect() {
     if (loading) return;
     if (!user) navigate('/login');
     else if (user.role === 'buyer') navigate('/buyer');
+    else if (user.role === 'commission_admin') navigate('/commission');
     else navigate('/dashboard');
   }, [loading, user]);
   return null;
@@ -62,27 +84,35 @@ function Router() {
       <Route path="/login" component={Login} />
       <Route path="/" component={RootRedirect} />
 
-      {/* Agent / Commission Routes */}
-      <Route path="/dashboard" component={() => <AgentRoute component={Dashboard} />} />
-      <Route path="/marketplace" component={() => <AgentRoute component={Marketplace} />} />
-      <Route path="/marketplace/:id" component={() => <AgentRoute component={PropertyDetail} />} />
-      <Route path="/listings/create" component={() => <AgentRoute component={CreateListing} />} />
-      <Route path="/verification" component={() => <AgentRoute component={Verification} />} />
-      <Route path="/transactions" component={() => <AgentRoute component={Transactions} />} />
-      <Route path="/messages" component={() => <AgentRoute component={Messages} />} />
-      <Route path="/notifications" component={() => <AgentRoute component={Notifications} />} />
-      <Route path="/settings" component={() => <AgentRoute component={Settings} />} />
-      <Route path="/admin" component={() => <AgentRoute component={Admin} />} />
+      {/* Agent Routes */}
+      <Route path="/dashboard"         component={() => <AgentRoute component={Dashboard} />} />
+      <Route path="/marketplace"       component={() => <AgentRoute component={Marketplace} />} />
+      <Route path="/marketplace/:id"   component={() => <AgentRoute component={PropertyDetail} />} />
+      <Route path="/listings/create"   component={() => <AgentRoute component={CreateListing} />} />
+      <Route path="/verification"      component={() => <AgentRoute component={Verification} />} />
+      <Route path="/transactions"      component={() => <AgentRoute component={Transactions} />} />
+      <Route path="/messages"          component={() => <AgentRoute component={Messages} />} />
+      <Route path="/notifications"     component={() => <AgentRoute component={Notifications} />} />
+      <Route path="/settings"          component={() => <AgentRoute component={Settings} />} />
+      <Route path="/admin"             component={() => <AgentRoute component={Admin} />} />
 
       {/* Buyer Routes */}
-      <Route path="/buyer" component={() => <BuyerRoute component={BuyerHome} />} />
-      <Route path="/buyer/browse" component={() => <BuyerRoute component={BuyerBrowse} />} />
-      <Route path="/buyer/property/:id" component={() => <BuyerRoute component={BuyerPropertyDetail} />} />
-      <Route path="/buyer/offers" component={() => <BuyerRoute component={BuyerOffers} />} />
-      <Route path="/buyer/escrow" component={() => <BuyerRoute component={BuyerEscrow} />} />
-      <Route path="/buyer/messages" component={() => <BuyerRoute component={BuyerMessages} />} />
-      <Route path="/buyer/notifications" component={() => <BuyerRoute component={BuyerNotifications} />} />
-      <Route path="/buyer/settings" component={() => <BuyerRoute component={BuyerSettings} />} />
+      <Route path="/buyer"                   component={() => <BuyerRoute component={BuyerHome} />} />
+      <Route path="/buyer/browse"            component={() => <BuyerRoute component={BuyerBrowse} />} />
+      <Route path="/buyer/property/:id"      component={() => <BuyerRoute component={BuyerPropertyDetail} />} />
+      <Route path="/buyer/offers"            component={() => <BuyerRoute component={BuyerOffers} />} />
+      <Route path="/buyer/escrow"            component={() => <BuyerRoute component={BuyerEscrow} />} />
+      <Route path="/buyer/messages"          component={() => <BuyerRoute component={BuyerMessages} />} />
+      <Route path="/buyer/notifications"     component={() => <BuyerRoute component={BuyerNotifications} />} />
+      <Route path="/buyer/settings"          component={() => <BuyerRoute component={BuyerSettings} />} />
+
+      {/* Land Commission Routes */}
+      <Route path="/commission"               component={() => <CommissionRoute component={CommissionDashboard} />} />
+      <Route path="/commission/verifications" component={() => <CommissionRoute component={CommissionVerifications} />} />
+      <Route path="/commission/listings"      component={() => <CommissionRoute component={CommissionListings} />} />
+      <Route path="/commission/audit"         component={() => <CommissionRoute component={CommissionAudit} />} />
+      <Route path="/commission/officers"      component={() => <CommissionRoute component={CommissionOfficers} />} />
+      <Route path="/commission/settings"      component={() => <CommissionRoute component={Settings} />} />
 
       <Route component={NotFound} />
     </Switch>
