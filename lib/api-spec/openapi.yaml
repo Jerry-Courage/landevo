@@ -2,21 +2,37 @@ openapi: 3.1.0
 info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
-  version: 0.1.0
-  description: API specification
+  version: 0.2.0
+  description: Landevo Real Estate Marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: listings
+    description: Property listings
+  - name: offers
+    description: Buyer offers
+  - name: verifications
+    description: Listing verifications
+  - name: transactions
+    description: Transactions and escrow
+  - name: messages
+    description: Messaging
+  - name: notifications
+    description: Notifications
+  - name: dashboard
+    description: Dashboard summaries
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,8 +40,707 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ── Auth ──────────────────────────────────────────────────────────────────
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current session user
+      responses:
+        "200":
+          description: Authenticated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Not authenticated
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: Registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "400":
+          description: Validation error
+        "409":
+          description: Email already exists
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Log in
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AuthCredentials"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+        "401":
+          description: Invalid credentials
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Log out
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  # ── Listings ──────────────────────────────────────────────────────────────
+  /listings:
+    get:
+      operationId: listListings
+      tags: [listings]
+      summary: List property listings
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: propertyType
+          schema:
+            type: string
+        - in: query
+          name: agentId
+          schema:
+            type: integer
+        - in: query
+          name: minPrice
+          schema:
+            type: number
+        - in: query
+          name: maxPrice
+          schema:
+            type: number
+        - in: query
+          name: search
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Listings list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+
+    post:
+      operationId: createListing
+      tags: [listings]
+      summary: Create a listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingInput"
+      responses:
+        "201":
+          description: Created listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  /listings/{listingId}:
+    get:
+      operationId: getListing
+      tags: [listings]
+      summary: Get a listing by ID
+      parameters:
+        - in: path
+          name: listingId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Listing detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+        "404":
+          description: Not found
+
+    patch:
+      operationId: updateListing
+      tags: [listings]
+      summary: Update a listing
+      parameters:
+        - in: path
+          name: listingId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingUpdate"
+      responses:
+        "200":
+          description: Updated listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+    delete:
+      operationId: deleteListing
+      tags: [listings]
+      summary: Delete a listing
+      parameters:
+        - in: path
+          name: listingId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  /listings/{listingId}/submit:
+    post:
+      operationId: submitListingForVerification
+      tags: [listings]
+      summary: Submit a listing for verification
+      parameters:
+        - in: path
+          name: listingId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  # ── Offers ────────────────────────────────────────────────────────────────
+  /listings/{listingId}/offers:
+    get:
+      operationId: getListingOffers
+      tags: [offers]
+      summary: List offers on a listing
+      parameters:
+        - in: path
+          name: listingId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Offer"
+
+    post:
+      operationId: makeOffer
+      tags: [offers]
+      summary: Make an offer on a listing
+      parameters:
+        - in: path
+          name: listingId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OfferInput"
+      responses:
+        "201":
+          description: Offer created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offer"
+
+  /offers:
+    get:
+      operationId: listMyOffers
+      tags: [offers]
+      summary: List current user's offers
+      responses:
+        "200":
+          description: Offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Offer"
+
+  /offers/{offerId}/accept:
+    patch:
+      operationId: acceptOffer
+      tags: [offers]
+      summary: Accept an offer
+      parameters:
+        - in: path
+          name: offerId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Accepted offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offer"
+
+  /offers/{offerId}/reject:
+    patch:
+      operationId: rejectOffer
+      tags: [offers]
+      summary: Reject an offer
+      parameters:
+        - in: path
+          name: offerId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Rejected offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offer"
+
+  /offers/{offerId}/withdraw:
+    patch:
+      operationId: withdrawOffer
+      tags: [offers]
+      summary: Withdraw an offer
+      parameters:
+        - in: path
+          name: offerId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Withdrawn offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Offer"
+
+  # ── Verifications ─────────────────────────────────────────────────────────
+  /verifications:
+    get:
+      operationId: listVerifications
+      tags: [verifications]
+      summary: List verification requests
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Verifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Verification"
+
+  /verifications/{verificationId}:
+    get:
+      operationId: getVerification
+      tags: [verifications]
+      summary: Get a verification by ID
+      parameters:
+        - in: path
+          name: verificationId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Verification detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Verification"
+
+  /verifications/{verificationId}/assign:
+    patch:
+      operationId: assignVerification
+      tags: [verifications]
+      summary: Assign a verification to an officer
+      parameters:
+        - in: path
+          name: verificationId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerificationAssignment"
+      responses:
+        "200":
+          description: Assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Verification"
+
+  /verifications/{verificationId}/approve:
+    patch:
+      operationId: approveVerification
+      tags: [verifications]
+      summary: Approve a verification
+      parameters:
+        - in: path
+          name: verificationId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerificationReview"
+      responses:
+        "200":
+          description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Verification"
+
+  /verifications/{verificationId}/reject:
+    patch:
+      operationId: rejectVerification
+      tags: [verifications]
+      summary: Reject a verification
+      parameters:
+        - in: path
+          name: verificationId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VerificationReview"
+      responses:
+        "200":
+          description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Verification"
+
+  # ── Transactions ──────────────────────────────────────────────────────────
+  /transactions:
+    get:
+      operationId: listTransactions
+      tags: [transactions]
+      summary: List transactions
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Transaction"
+
+  /transactions/{transactionId}:
+    get:
+      operationId: getTransaction
+      tags: [transactions]
+      summary: Get a transaction by ID
+      parameters:
+        - in: path
+          name: transactionId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Transaction detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  /transactions/{transactionId}/status:
+    patch:
+      operationId: updateTransactionStatus
+      tags: [transactions]
+      summary: Update transaction status
+      parameters:
+        - in: path
+          name: transactionId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TransactionStatusUpdate"
+      responses:
+        "200":
+          description: Updated transaction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+
+  # ── Messages ──────────────────────────────────────────────────────────────
+  /threads:
+    get:
+      operationId: listThreads
+      tags: [messages]
+      summary: List message threads for current user
+      responses:
+        "200":
+          description: Threads
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MessageThread"
+
+    post:
+      operationId: createThread
+      tags: [messages]
+      summary: Start a new message thread
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageThreadInput"
+      responses:
+        "201":
+          description: Created thread
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageThread"
+
+  /threads/{threadId}/messages:
+    get:
+      operationId: getThreadMessages
+      tags: [messages]
+      summary: Get messages in a thread
+      parameters:
+        - in: path
+          name: threadId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Messages
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Message"
+
+    post:
+      operationId: sendMessage
+      tags: [messages]
+      summary: Send a message in a thread
+      parameters:
+        - in: path
+          name: threadId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageInput"
+      responses:
+        "201":
+          description: Sent message
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  # ── Notifications ─────────────────────────────────────────────────────────
+  /notifications:
+    get:
+      operationId: listNotifications
+      tags: [notifications]
+      summary: List notifications for current user
+      parameters:
+        - in: query
+          name: unreadOnly
+          schema:
+            type: boolean
+      responses:
+        "200":
+          description: Notifications
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Notification"
+
+  /notifications/{notificationId}/read:
+    patch:
+      operationId: markNotificationRead
+      tags: [notifications]
+      summary: Mark a notification as read
+      parameters:
+        - in: path
+          name: notificationId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Notification"
+
+  /notifications/read-all:
+    post:
+      operationId: markAllNotificationsRead
+      tags: [notifications]
+      summary: Mark all notifications as read
+      responses:
+        "200":
+          description: All marked read
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OkResponse"
+
+  # ── Dashboard ─────────────────────────────────────────────────────────────
+  /dashboard/agent:
+    get:
+      operationId: getAgentDashboard
+      tags: [dashboard]
+      summary: Agent dashboard summary
+      responses:
+        "200":
+          description: Agent stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AgentDashboard"
+
+  /dashboard/buyer:
+    get:
+      operationId: getBuyerDashboard
+      tags: [dashboard]
+      summary: Buyer dashboard summary
+      responses:
+        "200":
+          description: Buyer stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BuyerDashboard"
+
+  /dashboard/commission:
+    get:
+      operationId: getCommissionDashboard
+      tags: [dashboard]
+      summary: Commission officer dashboard summary
+      responses:
+        "200":
+          description: Commission stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CommissionDashboard"
+
+  /dashboard/admin:
+    get:
+      operationId: getAdminDashboard
+      tags: [dashboard]
+      summary: System admin dashboard summary
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminDashboard"
+
 components:
   schemas:
+    # ── Core ──────────────────────────────────────────────────────────────
     HealthStatus:
       type: object
       properties:
@@ -34,3 +749,495 @@ components:
       required:
         - status
 
+    OkResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+
+    # ── Auth ──────────────────────────────────────────────────────────────
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        email:
+          type: string
+        name:
+          type: string
+        role:
+          type: string
+          enum: [agent, buyer, commission_admin, system_admin]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, email, name, role, createdAt]
+
+    AuthSession:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+      required: [user]
+
+    AuthCredentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+      required: [email, password]
+
+    RegisterInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 2
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        role:
+          type: string
+          enum: [agent, buyer]
+      required: [name, email, password, role]
+
+    # ── Listings ──────────────────────────────────────────────────────────
+    Listing:
+      type: object
+      properties:
+        id:
+          type: integer
+        agentId:
+          type: integer
+        agentName:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+        location:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        areaSqm:
+          type: number
+        bedrooms:
+          type: ["integer", "null"]
+        bathrooms:
+          type: ["integer", "null"]
+        propertyType:
+          type: string
+          enum: [land, residential, commercial, apartment]
+        status:
+          type: string
+          enum: [draft, pending_verification, verified, active, under_offer, sold]
+        images:
+          type: array
+          items:
+            type: string
+        verificationId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, agentId, agentName, title, description, price, location, address, city, state, areaSqm, propertyType, status, images, createdAt, updatedAt]
+
+    ListingInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+        description:
+          type: string
+          minLength: 10
+        price:
+          type: number
+          minimum: 0
+        location:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        areaSqm:
+          type: number
+          minimum: 0
+        bedrooms:
+          type: integer
+          minimum: 0
+        bathrooms:
+          type: integer
+          minimum: 0
+        propertyType:
+          type: string
+          enum: [land, residential, commercial, apartment]
+        images:
+          type: array
+          items:
+            type: string
+      required: [title, description, price, location, address, city, state, areaSqm, propertyType]
+
+    ListingUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+        description:
+          type: string
+        price:
+          type: number
+          minimum: 0
+        location:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        areaSqm:
+          type: number
+        bedrooms:
+          type: integer
+        bathrooms:
+          type: integer
+        propertyType:
+          type: string
+          enum: [land, residential, commercial, apartment]
+        images:
+          type: array
+          items:
+            type: string
+
+    # ── Verifications ─────────────────────────────────────────────────────
+    Verification:
+      type: object
+      properties:
+        id:
+          type: integer
+        listingId:
+          type: integer
+        listingTitle:
+          type: string
+        agentName:
+          type: string
+        officerId:
+          type: ["integer", "null"]
+        officerName:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, in_review, approved, rejected]
+        notes:
+          type: ["string", "null"]
+        submittedAt:
+          type: string
+          format: date-time
+        reviewedAt:
+          type: ["string", "null"]
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, listingId, listingTitle, agentName, status, submittedAt, createdAt]
+
+    VerificationAssignment:
+      type: object
+      properties:
+        officerId:
+          type: integer
+      required: [officerId]
+
+    VerificationReview:
+      type: object
+      properties:
+        notes:
+          type: string
+
+    # ── Transactions ──────────────────────────────────────────────────────
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        listingId:
+          type: integer
+        listingTitle:
+          type: string
+        buyerId:
+          type: integer
+        buyerName:
+          type: string
+        agentId:
+          type: integer
+        agentName:
+          type: string
+        offerId:
+          type: integer
+        offerAmount:
+          type: number
+        agreedAmount:
+          type: number
+        status:
+          type: string
+          enum: [offer_made, accepted, escrow_opened, funds_deposited, verification_complete, completed, cancelled]
+        escrowReference:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, listingId, listingTitle, buyerId, buyerName, agentId, agentName, offerId, offerAmount, agreedAmount, status, createdAt, updatedAt]
+
+    TransactionStatusUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [offer_made, accepted, escrow_opened, funds_deposited, verification_complete, completed, cancelled]
+      required: [status]
+
+    # ── Offers ────────────────────────────────────────────────────────────
+    Offer:
+      type: object
+      properties:
+        id:
+          type: integer
+        listingId:
+          type: integer
+        listingTitle:
+          type: string
+        buyerId:
+          type: integer
+        buyerName:
+          type: string
+        amount:
+          type: number
+        message:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum: [pending, accepted, rejected, withdrawn]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, listingId, listingTitle, buyerId, buyerName, amount, status, createdAt]
+
+    OfferInput:
+      type: object
+      properties:
+        amount:
+          type: number
+          minimum: 1
+        message:
+          type: string
+      required: [amount]
+
+    # ── Messages ──────────────────────────────────────────────────────────
+    MessageParticipant:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        role:
+          type: string
+      required: [id, name, role]
+
+    MessageThread:
+      type: object
+      properties:
+        id:
+          type: integer
+        listingId:
+          type: ["integer", "null"]
+        listingTitle:
+          type: ["string", "null"]
+        participants:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageParticipant"
+        lastMessage:
+          type: ["string", "null"]
+        lastMessageAt:
+          type: ["string", "null"]
+          format: date-time
+        unreadCount:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, participants, unreadCount, createdAt]
+
+    MessageThreadInput:
+      type: object
+      properties:
+        recipientId:
+          type: integer
+        listingId:
+          type: integer
+        initialMessage:
+          type: string
+          minLength: 1
+      required: [recipientId, initialMessage]
+
+    Message:
+      type: object
+      properties:
+        id:
+          type: integer
+        threadId:
+          type: integer
+        senderId:
+          type: integer
+        senderName:
+          type: string
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        readAt:
+          type: ["string", "null"]
+          format: date-time
+      required: [id, threadId, senderId, senderName, content, createdAt]
+
+    MessageInput:
+      type: object
+      properties:
+        content:
+          type: string
+          minLength: 1
+      required: [content]
+
+    # ── Notifications ─────────────────────────────────────────────────────
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        type:
+          type: string
+          enum: [offer_received, offer_accepted, offer_rejected, listing_verified, listing_rejected, transaction_update, new_message, system]
+        title:
+          type: string
+        body:
+          type: string
+        readAt:
+          type: ["string", "null"]
+          format: date-time
+        relatedId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required: [id, userId, type, title, body, createdAt]
+
+    # ── Dashboard ─────────────────────────────────────────────────────────
+    AgentDashboard:
+      type: object
+      properties:
+        totalListings:
+          type: integer
+        activeListings:
+          type: integer
+        pendingVerifications:
+          type: integer
+        totalOfferValue:
+          type: number
+        listingsByStatus:
+          type: object
+          additionalProperties:
+            type: integer
+        recentOffers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Offer"
+        recentTransactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+      required: [totalListings, activeListings, pendingVerifications, totalOfferValue, listingsByStatus, recentOffers, recentTransactions]
+
+    BuyerDashboard:
+      type: object
+      properties:
+        activeOffers:
+          type: integer
+        acceptedOffers:
+          type: integer
+        activeTransactions:
+          type: integer
+        recentListings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Listing"
+        recentOffers:
+          type: array
+          items:
+            $ref: "#/components/schemas/Offer"
+      required: [activeOffers, acceptedOffers, activeTransactions, recentListings, recentOffers]
+
+    CommissionDashboard:
+      type: object
+      properties:
+        pendingVerifications:
+          type: integer
+        inReviewVerifications:
+          type: integer
+        approvedThisMonth:
+          type: integer
+        rejectedThisMonth:
+          type: integer
+        recentVerifications:
+          type: array
+          items:
+            $ref: "#/components/schemas/Verification"
+      required: [pendingVerifications, inReviewVerifications, approvedThisMonth, rejectedThisMonth, recentVerifications]
+
+    AdminDashboard:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        totalAgents:
+          type: integer
+        totalBuyers:
+          type: integer
+        totalListings:
+          type: integer
+        activeListings:
+          type: integer
+        totalTransactions:
+          type: integer
+        completedTransactions:
+          type: integer
+        pendingVerifications:
+          type: integer
+      required: [totalUsers, totalAgents, totalBuyers, totalListings, activeListings, totalTransactions, completedTransactions, pendingVerifications]

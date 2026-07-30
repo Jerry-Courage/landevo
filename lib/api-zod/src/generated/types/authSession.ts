@@ -5,7 +5,8 @@
  * Landevo Real Estate Marketplace API
  * OpenAPI spec version: 0.2.0
  */
+import type { User } from './user';
 
-export interface HealthStatus {
-  status: string;
+export interface AuthSession {
+  user: User;
 }
