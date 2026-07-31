@@ -311,26 +311,6 @@ export default function Login() {
                 </Button>
               </form>
 
-              <div className="mt-8 mb-6 flex items-center text-xs text-muted-foreground">
-                <div className="flex-1 border-t border-border" />
-                <span className="px-4 font-semibold tracking-wider">OR CONTINUE WITH</span>
-                <div className="flex-1 border-t border-border" />
-              </div>
-
-              <div className="flex gap-3">
-                <Button variant="outline" className="flex-1 h-11" disabled>
-                  Google SSO
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 h-11 border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:text-primary"
-                  disabled
-                >
-                  <Shield className="w-4 h-4 mr-2" />
-                  GovAuth
-                </Button>
-              </div>
-
               <div className="mt-8 flex flex-col items-center gap-4">
                 <div className="flex gap-4 text-xs text-muted-foreground font-medium">
                   <a href="#" className="hover:text-foreground">Privacy Policy</a>
