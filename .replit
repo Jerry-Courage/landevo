@@ -1,4 +1,4 @@
-modules = ["nodejs-20", "web", "bash"]
+modules = ["nodejs-20", "web", "bash", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -48,8 +48,3 @@ waitForPort = 8080
 outputType = "console"
 
 [userenv]
-
-[userenv.shared]
-CLOUDINARY_API_KEY = "186714547737799"
-CLOUDINARY_API_SECRET = "DLgpgtwlWeVTK5Ermqam3c422To"
-CLOUDINARY_CLOUD_NAME = "dn1gq0sjc"

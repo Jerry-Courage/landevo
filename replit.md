@@ -1,65 +1,67 @@
-# Landevo — Real Estate Marketplace
+# Landevo — Secure Land Transaction Marketplace
 
-A full-stack Nigerian real estate marketplace platform connecting property agents, buyers, and commission officers.
+A Nigerian real estate marketplace connecting verified agents, government commissions, and buyers through a digital escrow system.
 
 ## Stack
 
-- **Frontend**: React 19 + Vite + Tailwind CSS (shadcn/ui components), served at `/`
-- **API server**: Express 5 + Pino logger, served at port `8080`, proxied under `/api`
-- **Database**: PostgreSQL (Replit built-in), schema managed by Drizzle ORM
-- **Auth**: Session-based (express-session + connect-pg-simple), bcrypt password hashing
+- **Frontend**: React + Vite + Tailwind CSS + shadcn/ui (`artifacts/landevo`)
+- **Backend**: Express API server (`artifacts/api-server`)
+- **Database**: PostgreSQL via Drizzle ORM (`lib/db`)
+- **Auth**: Session-based (express-session + connect-pg-simple)
+- **Monorepo**: pnpm workspaces
 
-## User Roles
+## Running the project
 
-| Role | Email (dev seed) | Password |
-|------|-----------------|----------|
-| Agent | agent@landevo.ng | password123 |
-| Buyer | buyer@landevo.ng | password123 |
-| Commission Admin | commission@landevo.ng | password123 |
-| System Admin | admin@landevo.ng | password123 |
+Two services must be running:
 
-## How to Run
+| Service | Workflow | Port |
+|---------|----------|------|
+| API server | `API Server` | 8080 |
+| Frontend | `artifacts/landevo: web` | 21072 |
 
-The **Project** workflow runs both services together:
+Both workflows are configured and auto-start. The frontend proxies `/api` requests to the API server.
 
-- `artifacts/landevo: web` — Vite dev server (port 21072, preview at `/`)
-- `API Server` — Express server (port 8080, accessed via `/api` proxy)
+## Test accounts (password: `password123`)
 
-## Project Structure
+| Role | Email |
+|------|-------|
+| Agent | agent@landevo.ng |
+| Buyer | buyer@landevo.ng |
+| Commission Officer | commission@landevo.ng |
+| System Admin | admin@landevo.ng |
+
+## Project structure
 
 ```
 artifacts/
-  api-server/      Express API (routes, middleware, libs)
-  landevo/         React frontend (pages, components, hooks)
+  api-server/     Express API (routes, middleware, build)
+  landevo/        React frontend (pages, components, hooks)
 lib/
-  api-spec/        OpenAPI spec + Orval codegen config
+  db/             Drizzle schema + seed script
+  api-spec/       OpenAPI spec + orval codegen config
+  api-zod/        Generated Zod validation schemas
   api-client-react/ Generated React Query hooks
-  api-zod/         Generated Zod validation schemas
-  db/              Drizzle schema, migrations, seed script
 ```
 
 ## Database
 
-Schema is pushed with:
-```
+Schema is managed with Drizzle. To push schema changes:
+```bash
 pnpm --filter @workspace/db run push
 ```
 
-Seed demo data with:
-```
+To re-seed demo data:
+```bash
 pnpm --filter @workspace/db run seed
 ```
 
-After spec changes, regenerate types:
-```
-pnpm --filter @workspace/api-spec run codegen
-```
+## External services (not yet configured)
 
-## Environment Variables
+- **Google Cloud Storage** — file uploads use GCS presigned URLs; requires `GOOGLE_APPLICATION_CREDENTIALS` or equivalent
+- **Cloudinary** — referenced in storage routes; requires `CLOUDINARY_*` env vars
 
-- `DATABASE_URL` — auto-injected by Replit
-- `SESSION_SECRET` — set as a Replit Secret
+The app runs without these — upload flows will return errors but all other features work.
 
-## User Preferences
+## User preferences
 
-- Keep the project's existing structure and stack — do not restructure or migrate it.
+- Keep the existing monorepo structure and pnpm workspace conventions

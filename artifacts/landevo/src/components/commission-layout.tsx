@@ -7,7 +7,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
-const NAV_ITEMS = [
+const NAV_ITEMS: { path: string; label: string; icon: React.ElementType; exact?: boolean; badge?: number }[] = [
   { path: "/commission", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { path: "/commission/verifications", label: "Agent Verifications", icon: ShieldCheck },
   { path: "/commission/listings", label: "Listing Audits", icon: Building2 },
