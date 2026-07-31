@@ -8,7 +8,7 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   getListNotificationsQueryKey,
-  getListOffersQueryKey,
+  getListMyOffersQueryKey,
   getListListingsQueryKey,
   getListThreadsQueryKey,
   getGetMeQueryKey,
@@ -58,7 +58,7 @@ export function useRealtime() {
             qc.invalidateQueries({ queryKey: getListNotificationsQueryKey() });
             break;
           case "offer_updated":
-            qc.invalidateQueries({ queryKey: getListOffersQueryKey() });
+            qc.invalidateQueries({ queryKey: getListMyOffersQueryKey() });
             break;
           case "listing_updated":
             qc.invalidateQueries({ queryKey: getListListingsQueryKey() });

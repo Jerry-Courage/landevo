@@ -1,55 +1,66 @@
-# Landevo
+# Landevo — Real Estate Marketplace
 
-A real estate marketplace platform connecting verified agents, government land commissions, and buyers through a secure digital escrow system.
+A full-stack real estate marketplace connecting verified agents, government commissions, and buyers through a digital escrow system.
 
 ## Stack
 
-- **Frontend**: React 19 + Vite + Tailwind CSS v4 + Wouter (routing) — `artifacts/landevo`
-- **Backend**: Express 5 + Pino logging — `artifacts/api-server`
-- **Database**: Replit PostgreSQL via Drizzle ORM — `lib/db`
-- **Session store**: `connect-pg-simple` (sessions stored in Postgres)
-- **Auth**: Email/password with bcryptjs; role-based (agent, buyer, commission_admin, system_admin)
-
-## Project structure
-
-```
-artifacts/
-  api-server/     Express API (port $PORT, default 8080)
-  landevo/        React frontend (port $PORT, default 21072)
-  mockup-sandbox/ Design canvas component sandbox
-lib/
-  db/             Drizzle schema + migrations
-  api-spec/       OpenAPI spec (Orval codegen source)
-  api-zod/        Generated Zod validators from OpenAPI spec
-  api-client-react/ Generated React Query hooks from OpenAPI spec
-```
+- **Frontend**: React + Vite + TypeScript (`artifacts/landevo/`)
+- **Backend**: Express 5 + TypeScript (`artifacts/api-server/`)
+- **Database**: PostgreSQL via Drizzle ORM (`lib/db/`)
+- **API contract**: OpenAPI 3.1 spec + Orval codegen (`lib/api-spec/`, `lib/api-client-react/`, `lib/api-zod/`)
+- **Session storage**: PostgreSQL-backed sessions (`connect-pg-simple`)
+- **Object storage**: Google Cloud Storage (`@google-cloud/storage`)
 
 ## Running the project
 
-Both services are managed as Replit workflows:
+Both services start automatically via the **Project** workflow:
 
-| Workflow | Command |
+| Service | Port | Command |
+|---|---|---|
+| API Server | 8080 | `PORT=8080 pnpm --filter @workspace/api-server run dev` |
+| Frontend | 21072 | `pnpm --filter @workspace/landevo run dev` |
+
+The frontend proxies `/api/*` to the API server on port 8080.
+
+## User roles
+
+| Role | Description |
 |---|---|
-| `artifacts/api-server: API Server` | `pnpm --filter @workspace/api-server run dev` |
-| `artifacts/landevo: web` | `pnpm --filter @workspace/landevo run dev` |
+| `agent` | Lists properties, manages offers and transactions |
+| `buyer` | Browses listings, makes offers, tracks escrow |
+| `commission_admin` | Reviews and approves listing verifications |
+| `system_admin` | Full platform oversight and user management |
 
-## Environment variables / secrets
-
-| Key | Notes |
-|---|---|
-| `DATABASE_URL` | Runtime-managed by Replit (auto-injected) |
-| `SESSION_SECRET` | Replit secret — required for Express sessions |
-
-## Database
-
-Schema is managed with Drizzle Kit. To push schema changes to the dev database:
+## Key directories
 
 ```
-cd lib/db && pnpm run push
+artifacts/
+  api-server/       # Express API (routes, middleware, libs)
+  landevo/          # React frontend (pages, components, hooks)
+lib/
+  api-spec/         # openapi.yaml + Orval codegen config
+  api-client-react/ # Generated React Query hooks
+  api-zod/          # Generated Zod validation schemas
+  db/               # Drizzle schema + migrations
+  object-storage-web/ # Uppy-based file upload helpers
 ```
 
-The schema covers: `users`, `listings`, `offers`, `transactions`, `verifications`, `messages`, `notifications`, `session` (for connect-pg-simple).
+## After changing the OpenAPI spec
+
+```bash
+pnpm --filter @workspace/api-spec run codegen
+```
+
+This regenerates `lib/api-client-react/src/generated/` and `lib/api-zod/src/generated/`.
+
+## Required secrets
+
+| Secret | Purpose |
+|---|---|
+| `SESSION_SECRET` | Express session signing |
+
+`DATABASE_URL` is runtime-managed by Replit — no manual setup needed.
 
 ## User preferences
 
-_None recorded yet._
+- Keep the existing project structure and stack; no restructuring without explicit request.

@@ -885,4 +885,26 @@ export const GetAdminDashboardResponse = zod.object({
   "pendingVerifications": zod.int()
 })
 
+/**
+ * @summary Request presigned upload URL body (UploadUrlRequest schema)
+ */
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1),
+  "size": zod.number().int().min(1),
+  "contentType": zod.string().min(1),
+})
+
+/**
+ * @summary Presigned upload URL response (UploadUrlResponse schema)
+ */
+export const RequestUploadUrlResponse = zod.object({
+  "uploadURL": zod.string().url(),
+  "objectPath": zod.string(),
+  "metadata": zod.object({
+    "name": zod.string().min(1),
+    "size": zod.number().int().min(1),
+    "contentType": zod.string().min(1),
+  }).optional(),
+})
+
 

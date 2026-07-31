@@ -16,10 +16,5 @@
     "prettier": "^3.9.6",
     "typescript": "~5.9.3"
   },
-  "pnpm": {
-    "overrides": {
-      "react": "$react",
-      "react-dom": "$react-dom"
-    }
-  }
+  "pnpm": {}
 }
