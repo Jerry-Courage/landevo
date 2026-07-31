@@ -36,9 +36,9 @@ export default function BuyerNotifications() {
   const [unreadOnly, setUnreadOnly] = useState(false);
   const qc = useQueryClient();
 
-  const { data: notifications = [], isLoading } = useListNotifications({
-    query: { queryKey: ["/api/notifications", unreadOnly] },
-  });
+  const { data: notifications = [], isLoading } = useListNotifications(
+    { unreadOnly },
+  );
   const { mutate: markAll, isPending: markingAll } = useMarkAllNotificationsRead({
     mutation: {
       onSuccess: () => qc.invalidateQueries({ queryKey: ["/api/notifications"] }),
@@ -140,7 +140,7 @@ export default function BuyerNotifications() {
                     isUnread ? "bg-primary/5" : ""
                   }`}
                   onClick={() => {
-                    if (isUnread) markOne({ id: notif.id });
+                    if (isUnread) markOne({ notificationId: notif.id });
                   }}
                 >
                   <div

@@ -19,6 +19,7 @@ import {
   useGetListing,
   useMakeOffer,
   useCreateThread,
+  getGetListingQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
@@ -50,7 +51,7 @@ export default function BuyerPropertyDetail() {
   const qc = useQueryClient();
 
   const { data: listing, isLoading, error } = useGetListing(listingId, {
-    query: { enabled: !isNaN(listingId) && listingId > 0 },
+    query: { enabled: !isNaN(listingId) && listingId > 0, queryKey: getGetListingQueryKey(listingId) },
   });
 
   const [offerAmount, setOfferAmount] = useState("");

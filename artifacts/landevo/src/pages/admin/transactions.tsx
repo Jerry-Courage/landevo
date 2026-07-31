@@ -34,12 +34,14 @@ function toEscrowLabel(s: string) {
 }
 
 const statusStyle: Record<TxnStatus, string> = {
+  All:           "",
   Completed:   "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
   "In Progress": "bg-indigo-500/15 text-indigo-400 border-indigo-500/20",
   Cancelled:   "bg-slate-500/15 text-slate-400 border-slate-500/20",
 };
 
 const statusIcon: Record<TxnStatus, React.ElementType> = {
+  All:           Landmark,
   Completed:     CheckCircle2,
   "In Progress": Clock,
   Cancelled:     XCircle,

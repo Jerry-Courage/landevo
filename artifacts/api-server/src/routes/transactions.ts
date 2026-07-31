@@ -84,7 +84,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 // GET /api/transactions/:id
 router.get("/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const tx = await fetchTxById(id);
@@ -104,7 +104,7 @@ router.get("/:id", requireAuth, async (req, res) => {
 
 // PATCH /api/transactions/:id/status
 router.patch("/:id/status", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const { status } = req.body as { status?: string };

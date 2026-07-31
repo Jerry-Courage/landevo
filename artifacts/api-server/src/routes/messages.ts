@@ -229,7 +229,7 @@ router.post("/threads", requireAuth, async (req, res) => {
 
 // GET /api/threads/:id/messages
 router.get("/threads/:threadId/messages", requireAuth, async (req, res) => {
-  const threadId = parseInt(req.params.threadId);
+  const threadId = parseInt(String(req.params.threadId));
   if (isNaN(threadId)) return res.status(400).json({ error: "Invalid ID" });
   const userId = req.session.userId!;
 
@@ -276,7 +276,7 @@ router.get("/threads/:threadId/messages", requireAuth, async (req, res) => {
 
 // POST /api/threads/:id/messages
 router.post("/threads/:threadId/messages", requireAuth, async (req, res) => {
-  const threadId = parseInt(req.params.threadId);
+  const threadId = parseInt(String(req.params.threadId));
   if (isNaN(threadId)) return res.status(400).json({ error: "Invalid ID" });
   const userId = req.session.userId!;
 

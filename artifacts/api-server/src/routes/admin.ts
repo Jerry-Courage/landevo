@@ -31,7 +31,7 @@ router.get("/users", requireRole("system_admin"), async (req, res) => {
 
 // PATCH /api/admin/users/:id  — update role and/or active status
 router.patch("/users/:id", requireRole("system_admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   // Prevent admins from modifying their own account

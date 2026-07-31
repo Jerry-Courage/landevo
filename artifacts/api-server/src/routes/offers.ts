@@ -35,7 +35,7 @@ function formatOffer(raw: Record<string, unknown>) {
 
 // GET /api/listings/:listingId/offers
 router.get("/listings/:listingId/offers", requireAuth, async (req, res) => {
-  const listingId = parseInt(req.params.listingId);
+  const listingId = parseInt(String(req.params.listingId));
   if (isNaN(listingId)) return res.status(400).json({ error: "Invalid ID" });
 
   const role = req.session.userRole!;
@@ -71,7 +71,7 @@ router.get("/listings/:listingId/offers", requireAuth, async (req, res) => {
 
 // POST /api/listings/:listingId/offers
 router.post("/listings/:listingId/offers", requireRole("buyer"), async (req, res) => {
-  const listingId = parseInt(req.params.listingId);
+  const listingId = parseInt(String(req.params.listingId));
   if (isNaN(listingId)) return res.status(400).json({ error: "Invalid ID" });
 
   const { amount, message } = req.body;
@@ -148,7 +148,7 @@ router.get("/offers", requireAuth, async (req, res) => {
 
 // PATCH /api/offers/:id/accept
 router.patch("/offers/:id/accept", requireRole("agent"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const [offer] = await db
@@ -236,7 +236,7 @@ router.patch("/offers/:id/accept", requireRole("agent"), async (req, res) => {
 
 // PATCH /api/offers/:id/reject
 router.patch("/offers/:id/reject", requireRole("agent"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const [offer] = await db
@@ -283,7 +283,7 @@ router.patch("/offers/:id/reject", requireRole("agent"), async (req, res) => {
 
 // PATCH /api/offers/:id/withdraw
 router.patch("/offers/:id/withdraw", requireRole("buyer"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const [offer] = await db

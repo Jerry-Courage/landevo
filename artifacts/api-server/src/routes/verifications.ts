@@ -93,7 +93,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 // GET /api/verifications/:id
 router.get("/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const role = req.session.userRole!;
@@ -112,7 +112,7 @@ router.get("/:id", requireAuth, async (req, res) => {
 
 // PATCH /api/verifications/:id/assign
 router.patch("/:id/assign", requireRole("commission_admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const { officerId } = req.body as { officerId?: number };
@@ -150,7 +150,7 @@ router.patch("/:id/assign", requireRole("commission_admin"), async (req, res) =>
 
 // PATCH /api/verifications/:id/approve
 router.patch("/:id/approve", requireRole("commission_admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const { notes } = req.body as { notes?: string };
@@ -201,7 +201,7 @@ router.patch("/:id/approve", requireRole("commission_admin"), async (req, res) =
 
 // PATCH /api/verifications/:id/reject
 router.patch("/:id/reject", requireRole("commission_admin"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const { notes } = req.body as { notes?: string };

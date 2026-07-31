@@ -26,7 +26,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 // PATCH /api/notifications/:id/read
 router.patch("/:id/read", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const [existing] = await db

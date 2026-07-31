@@ -141,7 +141,7 @@ router.post("/", requireRole("agent"), async (req, res) => {
 
 // GET /api/listings/:id
 router.get("/:id", requireAuth, async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const [listing] = await db
@@ -157,7 +157,7 @@ router.get("/:id", requireAuth, async (req, res) => {
 
 // PATCH /api/listings/:id
 router.patch("/:id", requireRole("agent"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const [existing] = await db
@@ -197,7 +197,7 @@ router.patch("/:id", requireRole("agent"), async (req, res) => {
 
 // DELETE /api/listings/:id
 router.delete("/:id", requireRole("agent"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const [existing] = await db
@@ -215,7 +215,7 @@ router.delete("/:id", requireRole("agent"), async (req, res) => {
 
 // POST /api/listings/:id/submit
 router.post("/:id/submit", requireRole("agent"), async (req, res) => {
-  const id = parseInt(req.params.id);
+  const id = parseInt(String(req.params.id));
   if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
 
   const [existing] = await db

@@ -38,11 +38,7 @@ export default function BuyerBrowse() {
 
   const deferredSearch = useDeferredValue(search);
 
-  const { data: listings = [], isLoading } = useListListings({
-    query: {
-      queryKey: ["/api/listings", deferredSearch, selectedTypes.join(","), minPrice, maxPrice],
-    },
-  });
+  const { data: listings = [], isLoading } = useListListings();
 
   // Client-side filter for type and price (API already filters by search/status)
   const filtered = listings.filter((l: Listing) => {

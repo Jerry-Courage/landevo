@@ -14,6 +14,8 @@ import {
   useListThreads,
   useGetThreadMessages,
   useSendMessage,
+  getListThreadsQueryKey,
+  getGetThreadMessagesQueryKey,
 } from "@workspace/api-client-react";
 import type { MessageThread, Message } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -55,7 +57,7 @@ export default function BuyerMessages() {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const { data: threads = [], isLoading: loadingThreads } = useListThreads({
-    query: { refetchInterval: 15_000 },
+    query: { refetchInterval: 15_000, queryKey: getListThreadsQueryKey() },
   });
 
   const selectedThread = (threads as MessageThread[]).find(
@@ -68,7 +70,7 @@ export default function BuyerMessages() {
       query: {
         enabled: selectedThreadId !== null,
         refetchInterval: 5_000,
-        queryKey: [`/api/threads/${selectedThreadId}/messages`],
+        queryKey: getGetThreadMessagesQueryKey(selectedThreadId!),
       },
     }
   );

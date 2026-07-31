@@ -64,13 +64,13 @@ export default function CommissionVerifications() {
   const selectedVerif = verifications.find((v) => v.id === selected);
 
   async function handleApprove(id: number) {
-    await approve.mutateAsync({ id, data: { notes: "Approved by officer" } });
+    await approve.mutateAsync({ verificationId: id, data: { notes: "Approved by officer" } });
     refetch();
     setSelected(null);
   }
 
   async function handleReject(id: number) {
-    await reject.mutateAsync({ id, data: { notes: "Rejected by officer" } });
+    await reject.mutateAsync({ verificationId: id, data: { notes: "Rejected by officer" } });
     refetch();
     setSelected(null);
   }
