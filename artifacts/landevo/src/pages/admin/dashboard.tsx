@@ -3,23 +3,11 @@ import AdminLayout from "@/components/admin-layout";
 import { Link } from "wouter";
 import {
   Users, Building2, ArrowRightLeft, Landmark,
-  TrendingUp, AlertTriangle, CheckCircle2, Clock,
-  ShieldCheck, Activity, ArrowUpRight, ChevronRight,
+  CheckCircle2, Clock, ShieldCheck, ArrowUpRight, ChevronRight,
 } from "lucide-react";
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { motion } from "framer-motion";
 import { useGetAdminDashboard, useListTransactions } from "@workspace/api-client-react";
-
-const volumeData = [
-  { m: "Jan", escrow: 1.2, transactions: 18 },
-  { m: "Feb", escrow: 1.8, transactions: 24 },
-  { m: "Mar", escrow: 2.4, transactions: 31 },
-  { m: "Apr", escrow: 3.1, transactions: 38 },
-  { m: "May", escrow: 4.2, transactions: 45 },
-  { m: "Jun", escrow: 5.6, transactions: 52 },
-  { m: "Jul", escrow: 6.8, transactions: 61 },
-  { m: "Aug", escrow: 8.4, transactions: 70 },
-];
 
 function fmtAmt(n: number) {
   if (n >= 1_000_000_000) return `₦ ${(n / 1_000_000_000).toFixed(2)}B`;
@@ -27,23 +15,12 @@ function fmtAmt(n: number) {
   return `₦ ${n.toLocaleString()}`;
 }
 
-function txEscrowLabel(status: string) {
-  switch (status) {
-    case "completed":            return "Released";
-    case "verification_complete":return "Pending Release";
-    case "cancelled":            return "Refunded";
-    case "escrow_opened":
-    case "funds_deposited":      return "In Escrow";
-    default:                     return "In Escrow";
-  }
-}
-
 function txDisplayStatus(status: string) {
   switch (status) {
-    case "completed":  return "Verification Complete";
-    case "cancelled":  return "Cancelled";
-    case "verification_complete": return "Pending Release";
-    default:           return "In Escrow";
+    case "completed":              return "Verification Complete";
+    case "cancelled":              return "Cancelled";
+    case "verification_complete":  return "Pending Release";
+    default:                       return "In Escrow";
   }
 }
 
@@ -58,31 +35,31 @@ export default function AdminDashboard() {
   const { data: dashboard } = useGetAdminDashboard();
   const { data: txList = [] } = useListTransactions();
 
-  const totalUsers         = dashboard?.totalUsers         ?? 0;
-  const totalAgents        = dashboard?.totalAgents        ?? 0;
-  const totalBuyers        = dashboard?.totalBuyers        ?? 0;
-  const totalListings      = dashboard?.totalListings      ?? 0;
-  const activeListings     = dashboard?.activeListings     ?? 0;
-  const totalTransactions  = dashboard?.totalTransactions  ?? 0;
-  const completedTxns      = dashboard?.completedTransactions ?? 0;
-  const pendingVerifs      = dashboard?.pendingVerifications  ?? 0;
+  const totalUsers         = (dashboard as any)?.totalUsers         ?? 0;
+  const totalAgents        = (dashboard as any)?.totalAgents        ?? 0;
+  const totalBuyers        = (dashboard as any)?.totalBuyers        ?? 0;
+  const totalListings      = (dashboard as any)?.totalListings      ?? 0;
+  const activeListings     = (dashboard as any)?.activeListings     ?? 0;
+  const totalTransactions  = (dashboard as any)?.totalTransactions  ?? 0;
+  const completedTxns      = (dashboard as any)?.completedTransactions ?? 0;
+  const pendingVerifs      = (dashboard as any)?.pendingVerifications  ?? 0;
+  const totalEscrowValue   = (dashboard as any)?.totalEscrowValue   ?? 0;
+  const volumeData         = (dashboard as any)?.volumeData         ?? [];
 
   const statCols = [
-    { label: "ESCROW VOLUME",        value: `₦ —`,             sub: "Platform-wide",                     color: "text-indigo-400",  icon: Landmark },
+    { label: "ESCROW VOLUME",        value: totalEscrowValue > 0 ? fmtAmt(totalEscrowValue) : "₦ —", sub: "Platform-wide",                     color: "text-indigo-400",  icon: Landmark },
     { label: "ACTIVE TRANSACTIONS",  value: String(totalTransactions - completedTxns), sub: `${completedTxns} completed`, color: "text-emerald-400", icon: ArrowRightLeft },
     { label: "TOTAL USERS",          value: String(totalUsers), sub: `${totalAgents} agents · ${totalBuyers} buyers`, color: "text-sky-400",    icon: Users },
     { label: "TOTAL LISTINGS",       value: String(totalListings), sub: `${activeListings} active`,       color: "text-violet-400",  icon: Building2 },
   ];
 
-  // Latest 5 transactions for the escrow queue
   const escrowQueue = txList
-    .filter(t => !["completed", "cancelled"].includes(t.status))
+    .filter((t: any) => !["completed", "cancelled"].includes(t.status))
     .slice(0, 5);
 
   return (
     <AdminLayout>
       <div className="p-6 md:p-8 space-y-7 max-w-7xl mx-auto">
-        {/* Header */}
         <div className="flex items-end justify-between">
           <div>
             <p className="text-[10px] font-bold tracking-widest mb-1" style={{ color: "rgba(255,255,255,0.3)" }}>SYSTEM ADMINISTRATION</p>
@@ -98,7 +75,6 @@ export default function AdminDashboard() {
           </Link>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {statCols.map((s, i) => {
             const Icon = s.icon;
@@ -117,36 +93,39 @@ export default function AdminDashboard() {
           })}
         </div>
 
-        {/* Chart + Pending verifications */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-          {/* Chart */}
           <div className="lg:col-span-2 rounded-xl border p-5" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-bold text-white">Transaction Volume Trend</p>
-                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>Illustrative platform trend (Jan – Aug)</p>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>Monthly escrow value (₦B) — last 6 months</p>
               </div>
               <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">LIVE</span>
             </div>
             <div className="h-[220px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={volumeData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="gEscrow" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis dataKey="m" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "rgba(255,255,255,0.3)" }} dy={8} />
-                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "rgba(255,255,255,0.3)" }} />
-                  <Tooltip contentStyle={{ background: "#1c1f2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12, color: "#fff" }} cursor={{ stroke: "rgba(255,255,255,0.1)" }} />
-                  <Area type="monotone" dataKey="escrow" name="Escrow (₦B)" stroke="#6366f1" strokeWidth={2} fill="url(#gEscrow)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              {volumeData.length === 0 ? (
+                <div className="h-full flex items-center justify-center text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>
+                  Volume data will appear as transactions are processed
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={volumeData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="gEscrow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis dataKey="m" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "rgba(255,255,255,0.3)" }} dy={8} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "rgba(255,255,255,0.3)" }} />
+                    <Tooltip contentStyle={{ background: "#1c1f2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12, color: "#fff" }} cursor={{ stroke: "rgba(255,255,255,0.1)" }} />
+                    <Area type="monotone" dataKey="escrow" name="Escrow (₦B)" stroke="#6366f1" strokeWidth={2} fill="url(#gEscrow)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 
-          {/* Quick stats */}
           <div className="rounded-xl border" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
             <div className="p-5 border-b" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
               <p className="text-sm font-bold text-white">Platform Summary</p>
@@ -175,7 +154,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Escrow Queue */}
         <div className="rounded-xl border" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.07)" }}>
           <div className="p-5 border-b flex items-center justify-between" style={{ borderColor: "rgba(255,255,255,0.07)" }}>
             <div>
@@ -203,14 +181,12 @@ export default function AdminDashboard() {
                   </tr>
                 </thead>
                 <tbody>
-                  {escrowQueue.map((txn) => {
+                  {escrowQueue.map((txn: any) => {
                     const displayStatus = txDisplayStatus(txn.status);
                     return (
                       <tr key={txn.id} className="border-b transition-colors" style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
                         <td className="px-5 py-3.5 font-mono text-xs font-semibold text-indigo-400">#{txn.id}</td>
-                        <td className="px-5 py-3.5">
-                          <p className="text-sm font-semibold text-white">{txn.listingTitle}</p>
-                        </td>
+                        <td className="px-5 py-3.5"><p className="text-sm font-semibold text-white">{txn.listingTitle}</p></td>
                         <td className="px-5 py-3.5 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>{txn.buyerName}</td>
                         <td className="px-5 py-3.5 text-sm" style={{ color: "rgba(255,255,255,0.6)" }}>{txn.agentName}</td>
                         <td className="px-5 py-3.5 text-sm font-bold text-white">{txn.agreedAmount ? fmtAmt(txn.agreedAmount) : fmtAmt(txn.offerAmount ?? 0)}</td>
@@ -220,9 +196,7 @@ export default function AdminDashboard() {
                             displayStatus === "Pending Release" ? "bg-amber-500/15 text-amber-400" :
                             "bg-indigo-500/15 text-indigo-400"
                           }`}>
-                            {displayStatus === "Verification Complete" ? <CheckCircle2 className="w-3 h-3" /> :
-                             displayStatus === "Pending Release" ? <Clock className="w-3 h-3" /> :
-                             <Landmark className="w-3 h-3" />}
+                            {displayStatus === "Pending Release" ? <Clock className="w-3 h-3" /> : <Landmark className="w-3 h-3" />}
                             {displayStatus}
                           </span>
                         </td>

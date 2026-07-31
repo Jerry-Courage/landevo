@@ -19,6 +19,7 @@ export const transactionStatusEnum = pgEnum("transaction_status", [
   "verification_complete",
   "completed",
   "cancelled",
+  "disputed",
 ]);
 
 export const transactionsTable = pgTable("transactions", {

@@ -17,18 +17,13 @@ router.get("/agent", requireRole("agent"), async (req, res) => {
   const agentId = req.session.userId!;
 
   const listings = await db
-    .select({
-      status: listingsTable.status,
-      count: count(),
-    })
+    .select({ status: listingsTable.status, count: count() })
     .from(listingsTable)
     .where(eq(listingsTable.agentId, agentId))
     .groupBy(listingsTable.status);
 
   const listingsByStatus: Record<string, number> = {};
-  let totalListings = 0;
-  let activeListings = 0;
-  let pendingVerifications = 0;
+  let totalListings = 0, activeListings = 0, pendingVerifications = 0;
 
   for (const row of listings) {
     listingsByStatus[row.status] = row.count;
@@ -93,10 +88,7 @@ router.get("/agent", requireRole("agent"), async (req, res) => {
     pendingVerifications,
     totalOfferValue: parseFloat(totalOfferValueResult[0]?.total ?? "0"),
     listingsByStatus,
-    recentOffers: recentOffers.map((o) => ({
-      ...o,
-      amount: parseFloat(o.amount as string),
-    })),
+    recentOffers: recentOffers.map((o) => ({ ...o, amount: parseFloat(o.amount as string) })),
     recentTransactions: recentTransactions.map((t) => ({
       ...t,
       offerAmount: parseFloat(t.offerAmount as string),
@@ -110,16 +102,12 @@ router.get("/buyer", requireRole("buyer"), async (req, res) => {
   const buyerId = req.session.userId!;
 
   const offerCounts = await db
-    .select({
-      status: offersTable.status,
-      count: count(),
-    })
+    .select({ status: offersTable.status, count: count() })
     .from(offersTable)
     .where(eq(offersTable.buyerId, buyerId))
     .groupBy(offersTable.status);
 
-  let activeOffers = 0;
-  let acceptedOffers = 0;
+  let activeOffers = 0, acceptedOffers = 0;
   for (const row of offerCounts) {
     if (row.status === "pending") activeOffers = row.count;
     if (row.status === "accepted") acceptedOffers = row.count;
@@ -162,9 +150,7 @@ router.get("/buyer", requireRole("buyer"), async (req, res) => {
     })
     .from(listingsTable)
     .innerJoin(usersTable, eq(listingsTable.agentId, usersTable.id))
-    .where(
-      sql`${listingsTable.status} IN ('active', 'verified')`,
-    )
+    .where(sql`${listingsTable.status} IN ('active', 'verified')`)
     .orderBy(sql`${listingsTable.createdAt} DESC`)
     .limit(6);
 
@@ -192,16 +178,27 @@ router.get("/buyer", requireRole("buyer"), async (req, res) => {
     acceptedOffers,
     activeTransactions,
     recentListings: recentListings.map((l) => ({
-      ...l,
-      price: parseFloat(l.price as string),
-      areaSqm: parseFloat(l.areaSqm as string),
+      ...l, price: parseFloat(l.price as string), areaSqm: parseFloat(l.areaSqm as string),
     })),
-    recentOffers: recentOffers.map((o) => ({
-      ...o,
-      amount: parseFloat(o.amount as string),
-    })),
+    recentOffers: recentOffers.map((o) => ({ ...o, amount: parseFloat(o.amount as string) })),
   });
 });
+
+// ─── Helpers for monthly breakdowns ───────────────────────────────────────────
+
+function last6MonthLabels(): Array<{ label: string; year: number; month: number }> {
+  const result = [];
+  const now = new Date();
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    result.push({
+      label: d.toLocaleString("en-NG", { month: "short" }),
+      year: d.getFullYear(),
+      month: d.getMonth() + 1, // 1-based
+    });
+  }
+  return result;
+}
 
 // GET /api/dashboard/commission
 router.get("/commission", requireRole("commission_admin"), async (req, res) => {
@@ -210,31 +207,23 @@ router.get("/commission", requireRole("commission_admin"), async (req, res) => {
   monthStart.setHours(0, 0, 0, 0);
 
   const allVerifications = await db
-    .select({
-      status: verificationsTable.status,
-      count: count(),
-    })
+    .select({ status: verificationsTable.status, count: count() })
     .from(verificationsTable)
     .groupBy(verificationsTable.status);
 
-  let pendingVerifications = 0;
-  let inReviewVerifications = 0;
+  let pendingVerifications = 0, inReviewVerifications = 0;
   for (const row of allVerifications) {
     if (row.status === "pending") pendingVerifications = row.count;
     if (row.status === "in_review") inReviewVerifications = row.count;
   }
 
   const thisMonthVerifications = await db
-    .select({
-      status: verificationsTable.status,
-      count: count(),
-    })
+    .select({ status: verificationsTable.status, count: count() })
     .from(verificationsTable)
     .where(gte(verificationsTable.reviewedAt, monthStart))
     .groupBy(verificationsTable.status);
 
-  let approvedThisMonth = 0;
-  let rejectedThisMonth = 0;
+  let approvedThisMonth = 0, rejectedThisMonth = 0;
   for (const row of thisMonthVerifications) {
     if (row.status === "approved") approvedThisMonth = row.count;
     if (row.status === "rejected") rejectedThisMonth = row.count;
@@ -261,12 +250,41 @@ router.get("/commission", requireRole("commission_admin"), async (req, res) => {
     .orderBy(sql`${verificationsTable.createdAt} DESC`)
     .limit(10);
 
+  // Monthly chart: last 6 months
+  const months = last6MonthLabels();
+  const monthlyRows = await db.execute(sql`
+    SELECT
+      EXTRACT(YEAR FROM reviewed_at)::int  AS yr,
+      EXTRACT(MONTH FROM reviewed_at)::int AS mo,
+      status,
+      COUNT(*)::int                        AS cnt
+    FROM verifications
+    WHERE reviewed_at IS NOT NULL
+      AND reviewed_at >= NOW() - INTERVAL '6 months'
+    GROUP BY yr, mo, status
+  `);
+
+  const monthlyMap: Record<string, { approved: number; rejected: number }> = {};
+  for (const row of monthlyRows.rows as any[]) {
+    const key = `${row.yr}-${row.mo}`;
+    if (!monthlyMap[key]) monthlyMap[key] = { approved: 0, rejected: 0 };
+    if (row.status === "approved") monthlyMap[key].approved = row.cnt;
+    if (row.status === "rejected") monthlyMap[key].rejected = row.cnt;
+  }
+
+  const monthlyActivity = months.map(({ label, year, month }) => ({
+    month: label,
+    approved: monthlyMap[`${year}-${month}`]?.approved ?? 0,
+    rejected:  monthlyMap[`${year}-${month}`]?.rejected ?? 0,
+  }));
+
   return res.json({
     pendingVerifications,
     inReviewVerifications,
     approvedThisMonth,
     rejectedThisMonth,
     recentVerifications,
+    monthlyActivity,
   });
 });
 
@@ -277,9 +295,7 @@ router.get("/admin", requireRole("system_admin"), async (req, res) => {
     .from(usersTable)
     .groupBy(usersTable.role);
 
-  let totalUsers = 0;
-  let totalAgents = 0;
-  let totalBuyers = 0;
+  let totalUsers = 0, totalAgents = 0, totalBuyers = 0;
   for (const row of userCounts) {
     totalUsers += row.count;
     if (row.role === "agent") totalAgents = row.count;
@@ -291,8 +307,7 @@ router.get("/admin", requireRole("system_admin"), async (req, res) => {
     .from(listingsTable)
     .groupBy(listingsTable.status);
 
-  let totalListings = 0;
-  let activeListings = 0;
+  let totalListings = 0, activeListings = 0;
   for (const row of listingCounts) {
     totalListings += row.count;
     if (row.status === "active") activeListings = row.count;
@@ -303,8 +318,7 @@ router.get("/admin", requireRole("system_admin"), async (req, res) => {
     .from(transactionsTable)
     .groupBy(transactionsTable.status);
 
-  let totalTransactions = 0;
-  let completedTransactions = 0;
+  let totalTransactions = 0, completedTransactions = 0;
   for (const row of txCounts) {
     totalTransactions += row.count;
     if (row.status === "completed") completedTransactions = row.count;
@@ -313,9 +327,43 @@ router.get("/admin", requireRole("system_admin"), async (req, res) => {
   const [{ pendingVerifications }] = await db
     .select({ pendingVerifications: count() })
     .from(verificationsTable)
-    .where(
-      sql`${verificationsTable.status} IN ('pending', 'in_review')`,
-    );
+    .where(sql`${verificationsTable.status} IN ('pending', 'in_review')`);
+
+  // Monthly volume chart: last 6 months
+  const months = last6MonthLabels();
+  const monthlyRows = await db.execute(sql`
+    SELECT
+      EXTRACT(YEAR FROM created_at)::int   AS yr,
+      EXTRACT(MONTH FROM created_at)::int  AS mo,
+      COUNT(*)::int                        AS cnt,
+      COALESCE(SUM(agreed_amount), 0)::float AS vol
+    FROM transactions
+    WHERE created_at >= NOW() - INTERVAL '6 months'
+      AND status NOT IN ('offer_made', 'accepted', 'cancelled')
+    GROUP BY yr, mo
+  `);
+
+  const volumeMap: Record<string, { transactions: number; escrow: number }> = {};
+  for (const row of monthlyRows.rows as any[]) {
+    volumeMap[`${row.yr}-${row.mo}`] = {
+      transactions: row.cnt,
+      escrow: row.vol / 1_000_000_000, // convert to billions
+    };
+  }
+
+  const volumeData = months.map(({ label, year, month }) => ({
+    m: label,
+    transactions: volumeMap[`${year}-${month}`]?.transactions ?? 0,
+    escrow: parseFloat((volumeMap[`${year}-${month}`]?.escrow ?? 0).toFixed(2)),
+  }));
+
+  // Total escrow value currently held
+  const [escrowValue] = await db
+    .select({ total: sql<string>`COALESCE(SUM(agreed_amount), 0)` })
+    .from(transactionsTable)
+    .where(sql`status IN ('escrow_opened','funds_deposited','verification_complete','disputed')`);
+
+  const totalEscrowValue = parseFloat(escrowValue?.total ?? "0");
 
   return res.json({
     totalUsers,
@@ -326,6 +374,8 @@ router.get("/admin", requireRole("system_admin"), async (req, res) => {
     totalTransactions,
     completedTransactions,
     pendingVerifications,
+    totalEscrowValue,
+    volumeData,
   });
 });
 

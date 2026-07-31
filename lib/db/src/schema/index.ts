@@ -6,3 +6,4 @@ export * from "./offers";
 export * from "./transactions";
 export * from "./messages";
 export * from "./notifications";
+export * from "./activity-logs";
