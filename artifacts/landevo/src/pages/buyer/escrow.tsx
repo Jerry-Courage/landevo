@@ -2,9 +2,10 @@ import React from "react";
 import BuyerLayout from "@/components/buyer-layout";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { CheckCircle2, Clock, Lock, HelpCircle, Loader2, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useListTransactions } from "@workspace/api-client-react";
+import { CheckCircle2, Clock, Lock, HelpCircle, Loader2, ShieldCheck, ArrowRight } from "lucide-react";
+import { useListTransactions, useUpdateTransactionStatus, getListTransactionsQueryKey } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Transaction } from "@workspace/api-client-react";
 
 function formatCurrency(n: number) {
@@ -24,8 +25,8 @@ const STATUS_STEPS = [
 const STATUS_ORDER = STATUS_STEPS.map((s) => s.key);
 
 function getStepState(stepKey: string, txStatus: string) {
-  const stepIdx = STATUS_ORDER.indexOf(stepKey as any);
-  const currIdx = STATUS_ORDER.indexOf(txStatus as any);
+  const stepIdx = STATUS_ORDER.indexOf(stepKey as never);
+  const currIdx = STATUS_ORDER.indexOf(txStatus as never);
   if (stepIdx < currIdx) return "done";
   if (stepIdx === currIdx) return "active";
   return "pending";
@@ -49,13 +50,29 @@ function statusBadge(status: string) {
 }
 
 function progressPct(status: string) {
-  const idx = STATUS_ORDER.indexOf(status as any);
+  const idx = STATUS_ORDER.indexOf(status as never);
   if (idx < 0) return 0;
   return Math.round(((idx + 1) / STATUS_STEPS.length) * 100);
 }
 
-function EscrowCard({ tx }: { tx: Transaction }) {
+function EscrowCard({
+  tx,
+  onAdvance,
+  advancing,
+}: {
+  tx: Transaction;
+  onAdvance: (txId: number, nextStatus: string) => void;
+  advancing: boolean;
+}) {
   const pct = progressPct(tx.status);
+
+  // Determine what action the buyer can take
+  const nextAction: { label: string; nextStatus: string; description: string } | null =
+    tx.status === "accepted"
+      ? { label: "Open Escrow", nextStatus: "escrow_opened", description: "Initiate the escrow process to begin the secure transfer." }
+      : tx.status === "escrow_opened"
+      ? { label: "Confirm Funds Deposited", nextStatus: "funds_deposited", description: "Confirm that your funds have been transferred into escrow." }
+      : null;
 
   return (
     <Card className="overflow-hidden border-border/60 shadow-sm">
@@ -82,113 +99,97 @@ function EscrowCard({ tx }: { tx: Transaction }) {
       </div>
 
       <div className="flex flex-col md:flex-row">
-        {/* Left: amounts */}
+        {/* Amounts */}
         <div className="flex-1 p-6 md:border-r border-b md:border-b-0 space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">
-                AGREED AMOUNT
-              </p>
-              <p className="font-bold text-lg">{formatCurrency(tx.agreedAmount)}</p>
+              <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">AGREED AMOUNT</p>
+              <p className="text-xl font-bold text-foreground">{formatCurrency(tx.agreedAmount ?? tx.offerAmount)}</p>
             </div>
             <div>
-              <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">
-                OFFER AMOUNT
-              </p>
-              <p className="font-bold text-lg text-primary">{formatCurrency(tx.offerAmount)}</p>
+              <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">OFFER AMOUNT</p>
+              <p className="text-xl font-bold text-muted-foreground">{formatCurrency(tx.offerAmount)}</p>
             </div>
           </div>
 
-          <div>
-            <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-2">
-              MANAGING AGENT
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center font-bold text-xs">
-                {(tx.agentName ?? "?")
-                  .split(" ")
-                  .map((n: string) => n[0])
-                  .join("")
-                  .substring(0, 2)
-                  .toUpperCase()}
-              </div>
-              <div>
-                <p className="text-sm font-bold">{tx.agentName}</p>
-                <p className="text-xs text-muted-foreground">Agent</p>
-              </div>
-            </div>
-          </div>
-
-          {tx.status === "completed" && (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3">
-              <ShieldCheck className="w-5 h-5 text-green-600 flex-shrink-0" />
-              <p className="text-sm font-bold text-green-800">
-                Transaction complete. Title has been transferred.
-              </p>
-            </div>
-          )}
-        </div>
-
-        {/* Right: timeline */}
-        <div className="w-full md:w-[300px] bg-card p-6 flex flex-col">
-          <h4 className="font-bold text-sm tracking-wider text-muted-foreground mb-6">
-            PROCESS STEPS
-          </h4>
-
-          <div className="space-y-5 relative before:absolute before:inset-0 before:ml-3 before:h-full before:w-0.5 before:bg-border mb-6">
+          {/* Step tracker */}
+          <div className="space-y-3">
             {STATUS_STEPS.map((step) => {
               const state = getStepState(step.key, tx.status);
               return (
-                <div key={step.key} className="relative flex items-center gap-4 pl-2">
-                  <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 z-10 border-2 ${
-                      state === "done"
-                        ? "border-green-500 bg-white"
-                        : state === "active"
-                        ? "border-amber-500 bg-white"
-                        : "border-muted bg-muted"
-                    }`}
-                  >
-                    {state === "done" && <CheckCircle2 className="w-4 h-4 text-green-500" />}
-                    {state === "active" && (
-                      <Clock className="w-3 h-3 text-amber-500 animate-pulse" />
-                    )}
-                    {state === "pending" && <Lock className="w-3 h-3 text-muted-foreground" />}
-                  </div>
-                  <div>
-                    <p
-                      className={`text-sm font-bold ${
-                        state === "active"
-                          ? "text-amber-600"
-                          : state === "pending"
-                          ? "text-muted-foreground"
-                          : "text-foreground"
-                      }`}
-                    >
-                      {step.label}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground font-medium">
-                      {state === "done"
-                        ? new Date(tx.updatedAt).toLocaleDateString("en-NG", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : state === "active"
-                        ? "In Progress"
-                        : "Locked"}
-                    </p>
-                  </div>
+                <div key={step.key} className="flex items-center gap-3">
+                  {state === "done" ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500 flex-shrink-0" />
+                  ) : state === "active" ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-primary bg-primary/20 flex-shrink-0" />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30 flex-shrink-0" />
+                  )}
+                  <span className={`text-sm font-medium ${state === "active" ? "text-foreground font-bold" : state === "done" ? "text-muted-foreground line-through" : "text-muted-foreground/60"}`}>
+                    {step.label}
+                  </span>
+                  {state === "active" && (
+                    <Badge className="ml-auto text-[9px] font-bold bg-primary/10 text-primary border-primary/20">CURRENT</Badge>
+                  )}
                 </div>
               );
             })}
           </div>
+        </div>
 
-          <div className="mt-auto">
-            <Button variant="ghost" className="w-full text-xs font-medium text-muted-foreground hover:text-foreground">
-              <HelpCircle className="w-4 h-4 mr-1" /> Need Help?
-            </Button>
+        {/* Actions */}
+        <div className="w-full md:w-64 p-6 space-y-3 flex flex-col justify-between">
+          <div className="space-y-3">
+            <p className="text-xs font-bold text-muted-foreground tracking-wider">YOUR NEXT STEP</p>
+
+            {nextAction ? (
+              <div className="space-y-3">
+                <p className="text-xs text-muted-foreground leading-relaxed">{nextAction.description}</p>
+                <Button
+                  className="w-full font-bold"
+                  disabled={advancing}
+                  onClick={() => onAdvance(tx.id, nextAction.nextStatus)}
+                >
+                  {advancing ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <ArrowRight className="w-4 h-4 mr-2" />
+                  )}
+                  {advancing ? "Processing…" : nextAction.label}
+                </Button>
+              </div>
+            ) : tx.status === "funds_deposited" ? (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200">
+                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700 font-medium leading-relaxed">
+                  Awaiting Commission verification. We'll notify you when complete.
+                </p>
+              </div>
+            ) : tx.status === "verification_complete" ? (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-emerald-700 font-medium leading-relaxed">
+                  Verified! Awaiting admin to release escrow funds.
+                </p>
+              </div>
+            ) : tx.status === "completed" ? (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-green-50 border border-green-200">
+                <ShieldCheck className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-green-700 font-medium leading-relaxed">
+                  Transaction complete. Title has been transferred.
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-start gap-2 p-3 rounded-lg bg-muted/50 border">
+                <Lock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-muted-foreground leading-relaxed">No action required from you at this stage.</p>
+              </div>
+            )}
           </div>
+
+          <Button variant="ghost" className="w-full text-xs font-medium text-muted-foreground hover:text-foreground">
+            <HelpCircle className="w-4 h-4 mr-1" /> Need Help?
+          </Button>
         </div>
       </div>
     </Card>
@@ -196,7 +197,27 @@ function EscrowCard({ tx }: { tx: Transaction }) {
 }
 
 export default function BuyerEscrow() {
+  const queryClient = useQueryClient();
   const { data: transactions = [], isLoading } = useListTransactions();
+  const [advancingId, setAdvancingId] = React.useState<number | null>(null);
+
+  const updateStatus = useUpdateTransactionStatus({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey() });
+        setAdvancingId(null);
+      },
+      onError: () => setAdvancingId(null),
+    },
+  });
+
+  const handleAdvance = (txId: number, nextStatus: string) => {
+    setAdvancingId(txId);
+    updateStatus.mutate({
+      transactionId: txId,
+      data: { status: nextStatus as never },
+    });
+  };
 
   return (
     <BuyerLayout>
@@ -227,8 +248,13 @@ export default function BuyerEscrow() {
         )}
 
         <div className="space-y-8">
-          {transactions.map((tx: Transaction) => (
-            <EscrowCard key={tx.id} tx={tx} />
+          {(transactions as Transaction[]).map((tx) => (
+            <EscrowCard
+              key={tx.id}
+              tx={tx}
+              onAdvance={handleAdvance}
+              advancing={advancingId === tx.id}
+            />
           ))}
         </div>
       </div>

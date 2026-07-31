@@ -51,7 +51,52 @@ export default function AdminEscrow() {
   const fetchEscrows = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/escrows");
-      if (res.ok) setEscrows(await res.json());
+      if (res.ok) {
+        // Map backend transaction statuses to display labels
+        const raw = await res.json() as Array<{
+          id: number;
+          listingTitle?: string;
+          buyerName?: string;
+          agentName?: string;
+          agreedAmount?: number;
+          offerAmount?: number;
+          status: string;
+          escrowReference?: string | null;
+          createdAt?: string;
+        }>;
+        const toDisplayStatus = (s: string): string => {
+          switch (s) {
+            case "accepted":
+            case "escrow_opened":
+            case "funds_deposited": return "In Escrow";
+            case "verification_complete": return "Pending Release";
+            case "completed": return "Released";
+            case "disputed": return "Disputed";
+            case "cancelled": return "Refunded";
+            default: return "In Escrow";
+          }
+        };
+        const mapped: EscrowRow[] = raw.map((tx) => {
+          const held = tx.createdAt ? new Date(tx.createdAt).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }) : "—";
+          const daysHeld = tx.createdAt
+            ? Math.floor((Date.now() - new Date(tx.createdAt).getTime()) / 86_400_000)
+            : 0;
+          const displayStatus = toDisplayStatus(tx.status);
+          return {
+            id: String(tx.id),
+            transactionId: tx.id,
+            property: tx.listingTitle ?? "Unknown property",
+            buyer: tx.buyerName ?? "—",
+            agent: tx.agentName ?? "—",
+            value: tx.agreedAmount ?? tx.offerAmount ?? 0,
+            status: displayStatus,
+            held,
+            commission: "5%",
+            daysHeld: displayStatus === "Released" ? 0 : daysHeld,
+          };
+        });
+        setEscrows(mapped);
+      }
     } catch { /* ignore */ } finally {
       setLoading(false);
     }
