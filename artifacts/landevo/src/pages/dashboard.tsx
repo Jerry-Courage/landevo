@@ -1,14 +1,28 @@
-import React from "react";
+import React, { useState } from "react";
 import AppLayout from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowUpRight, ArrowDownRight, Filter, MoreHorizontal, ShieldCheck, Clock, AlertTriangle } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  ArrowUpRight, ArrowDownRight, Filter, MoreHorizontal, ShieldCheck, Clock,
+  AlertTriangle, Check, X, Trash2, Loader2,
+} from "lucide-react";
 import { formatCurrency } from "@/lib/format";
 import { Link } from "wouter";
 import { motion } from "framer-motion";
-import { useGetAgentDashboard, useListListings } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  useGetAgentDashboard, useListListings, useAcceptOffer, useRejectOffer,
+  useDeleteListing, getGetAgentDashboardQueryKey, getListListingsQueryKey,
+} from "@workspace/api-client-react";
 
 function statusBadge(status: string) {
   if (status === "verified" || status === "active") {
@@ -48,8 +62,27 @@ function fmt(d: string | Date | null | undefined) {
 }
 
 export default function Dashboard() {
+  const queryClient = useQueryClient();
   const { data: dashboard } = useGetAgentDashboard();
   const { data: listings } = useListListings();
+
+  // Offer accept/reject
+  const invalidateDashboard = () =>
+    queryClient.invalidateQueries({ queryKey: getGetAgentDashboardQueryKey() });
+
+  const acceptOffer = useAcceptOffer({ mutation: { onSuccess: invalidateDashboard } });
+  const rejectOffer = useRejectOffer({ mutation: { onSuccess: invalidateDashboard } });
+
+  // Listing delete
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; title: string } | null>(null);
+  const deleteListing = useDeleteListing({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListListingsQueryKey() });
+        queryClient.invalidateQueries({ queryKey: getGetAgentDashboardQueryKey() });
+      },
+    },
+  });
 
   const activeListings      = dashboard?.activeListings ?? 0;
   const totalListings       = dashboard?.totalListings ?? 0;
@@ -65,6 +98,32 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
+      {/* Delete confirmation dialog */}
+      <AlertDialog open={!!deleteTarget} onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete this listing?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{deleteTarget?.title}</strong> will be permanently removed from the platform. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteTarget) {
+                  deleteListing.mutate({ listingId: deleteTarget.id });
+                  setDeleteTarget(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
 
         {/* Header Section */}
@@ -173,7 +232,7 @@ export default function Dashboard() {
           <Card className="lg:col-span-2 flex flex-col shadow-sm">
             <CardHeader className="pb-4">
               <CardTitle>Recent Offers</CardTitle>
-              <CardDescription>Latest offers received on your listings</CardDescription>
+              <CardDescription>Latest offers received on your listings — accept or reject pending ones here</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 p-0">
               {recentOffers.length === 0 ? (
@@ -187,16 +246,40 @@ export default function Dashboard() {
                       <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground text-right">AMOUNT (₦)</TableHead>
                       <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">STATUS</TableHead>
                       <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">DATE</TableHead>
+                      <TableHead className="w-[120px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {recentOffers.slice(0, 5).map(offer => (
                       <TableRow key={offer.id} className="hover:bg-muted/30 transition-colors">
-                        <TableCell className="font-medium text-sm max-w-[150px] truncate">{offer.listingTitle}</TableCell>
+                        <TableCell className="font-medium text-sm max-w-[130px] truncate">{offer.listingTitle}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{offer.buyerName}</TableCell>
                         <TableCell className="text-sm font-semibold text-right">{formatCurrency(offer.amount)}</TableCell>
                         <TableCell>{offerStatusBadge(offer.status)}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">{fmt(offer.createdAt)}</TableCell>
+                        <TableCell>
+                          {offer.status === "pending" && (
+                            <div className="flex items-center gap-1">
+                              <Button
+                                size="sm"
+                                className="h-7 px-2 bg-green-600 hover:bg-green-700 font-bold text-xs"
+                                disabled={acceptOffer.isPending || rejectOffer.isPending}
+                                onClick={() => acceptOffer.mutate({ offerId: offer.id })}
+                              >
+                                {acceptOffer.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 px-2 text-red-600 border-red-200 hover:bg-red-50 font-bold text-xs"
+                                disabled={acceptOffer.isPending || rejectOffer.isPending}
+                                onClick={() => rejectOffer.mutate({ offerId: offer.id })}
+                              >
+                                {rejectOffer.isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : <X className="w-3 h-3" />}
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -256,10 +339,25 @@ export default function Dashboard() {
                       <TableCell className="text-sm">{listing.areaSqm} sqm</TableCell>
                       <TableCell className="text-sm font-semibold text-right">{formatCurrency(listing.price)}</TableCell>
                       <TableCell>{statusBadge(listing.status)}</TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem asChild>
+                              <Link href={`/marketplace/${listing.id}`}>View Details</Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                              onClick={() => setDeleteTarget({ id: listing.id, title: listing.title })}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete Listing
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))

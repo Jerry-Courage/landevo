@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import CommissionLayout from "@/components/commission-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  User, Lock, Bell, Shield, CheckCircle2, AlertCircle, Eye, EyeOff,
+  User, Lock, Bell, Shield, CheckCircle2, AlertCircle, Eye, EyeOff, Loader2,
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 
@@ -23,17 +23,65 @@ export default function CommissionSettings() {
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [pwSaved, setPwSaved] = useState(false);
-  const [pwError, setPwError] = useState("");
 
+  // Profile form state
+  const [name, setName] = useState(user?.name ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
+  const [phone, setPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  // Sync when user loads
+  useEffect(() => {
+    if (user) {
+      setName(user.name ?? "");
+      setEmail(user.email ?? "");
+    }
+  }, [user]);
+
+  // Password form state
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSaved, setPwSaved] = useState(false);
+  const [pwError, setPwError] = useState("");
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  // Notification prefs state
+  const [notifPrefs, setNotifPrefs] = useState({
+    newVerification: true,
+    listingAudit: true,
+    commissionActivity: false,
+    priorityEscalations: true,
+    weeklySummary: true,
+    systemAlerts: false,
+  });
+  const [notifSaving, setNotifSaving] = useState(false);
+  const [notifSaved, setNotifSaved] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    setSaveError("");
+    try {
+      const res = await fetch("/api/users/me", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: name.trim(), email: email.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setSaveError((data as Record<string, string>).message ?? "Failed to save profile.");
+        return;
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      setSaveError("Network error. Please try again.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handlePasswordChange = async () => {
@@ -50,15 +98,17 @@ export default function CommissionSettings() {
       setPwError("New password must be at least 8 characters.");
       return;
     }
+    setPwSaving(true);
     try {
       const res = await fetch("/api/auth/change-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ currentPassword, newPassword }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setPwError(data.message ?? "Failed to update password.");
+        setPwError((data as Record<string, string>).message ?? "Failed to update password.");
         return;
       }
       setPwSaved(true);
@@ -68,8 +118,35 @@ export default function CommissionSettings() {
       setTimeout(() => setPwSaved(false), 2500);
     } catch {
       setPwError("Network error. Please try again.");
+    } finally {
+      setPwSaving(false);
     }
   };
+
+  const handleNotifSave = async () => {
+    setNotifSaving(true);
+    try {
+      await fetch("/api/users/me/preferences", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ notifications: notifPrefs }),
+      });
+      setNotifSaved(true);
+      setTimeout(() => setNotifSaved(false), 2500);
+    } catch { /* ignore */ } finally {
+      setNotifSaving(false);
+    }
+  };
+
+  const NOTIF_ITEMS = [
+    { key: "newVerification" as const,      label: "New agent verification submitted",    desc: "When an agent submits credentials for review" },
+    { key: "listingAudit" as const,         label: "Listing audit required",             desc: "When a property listing is awaiting your review" },
+    { key: "commissionActivity" as const,   label: "Commission activity alerts",         desc: "When a submission is approved or rejected" },
+    { key: "priorityEscalations" as const,  label: "Priority escalations",              desc: "When a submission is marked high priority" },
+    { key: "weeklySummary" as const,        label: "Weekly summary digest",             desc: "A weekly report of commission activity and pending items" },
+    { key: "systemAlerts" as const,         label: "System alerts",                     desc: "Automated system events and duplicate title detections" },
+  ];
 
   return (
     <CommissionLayout>
@@ -117,11 +194,11 @@ export default function CommissionSettings() {
                     {/* Avatar */}
                     <div className="flex items-center gap-4">
                       <div className="w-16 h-16 rounded-full bg-emerald-700 flex items-center justify-center font-bold text-white text-xl flex-shrink-0">
-                        {user?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ?? "LC"}
+                        {name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() || "LC"}
                       </div>
                       <div>
-                        <p className="font-semibold text-sm">{user?.name ?? "Commission Admin"}</p>
-                        <p className="text-xs text-muted-foreground">{user?.email}</p>
+                        <p className="font-semibold text-sm">{name || "Commission Admin"}</p>
+                        <p className="text-xs text-muted-foreground">{email}</p>
                         <Badge className="mt-1.5 text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none font-bold">
                           Commission Admin
                         </Badge>
@@ -132,7 +209,7 @@ export default function CommissionSettings() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-muted-foreground tracking-wider">FULL NAME</label>
-                          <Input defaultValue={user?.name ?? ""} className="h-10" />
+                          <Input value={name} onChange={(e) => setName(e.target.value)} className="h-10" />
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-muted-foreground tracking-wider">COMMISSION ID</label>
@@ -141,12 +218,12 @@ export default function CommissionSettings() {
                       </div>
                       <div className="space-y-1.5">
                         <label className="text-xs font-semibold text-muted-foreground tracking-wider">OFFICIAL EMAIL</label>
-                        <Input type="email" defaultValue={user?.email ?? ""} className="h-10" />
+                        <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-10" />
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-muted-foreground tracking-wider">PHONE</label>
-                          <Input type="tel" placeholder="+234 800 000 0000" className="h-10" />
+                          <Input type="tel" placeholder="+234 800 000 0000" value={phone} onChange={(e) => setPhone(e.target.value)} className="h-10" />
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-muted-foreground tracking-wider">JURISDICTION</label>
@@ -154,18 +231,25 @@ export default function CommissionSettings() {
                         </div>
                       </div>
                     </div>
+
+                    {saveError && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-xs text-red-700 font-medium">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" /> {saveError}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
                 <div className="flex justify-end">
                   <Button
-                    className="bg-emerald-700 hover:bg-emerald-800 font-semibold"
+                    className="bg-emerald-700 hover:bg-emerald-800 font-semibold min-w-[120px]"
                     onClick={handleSave}
+                    disabled={saving}
                   >
-                    {saved ? (
-                      <span className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4" /> Saved
-                      </span>
+                    {saving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : saved ? (
+                      <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Saved</span>
                     ) : "Save Changes"}
                   </Button>
                 </div>
@@ -248,8 +332,16 @@ export default function CommissionSettings() {
                   </div>
 
                   <div className="border-t pt-4 flex justify-end">
-                    <Button className="bg-emerald-700 hover:bg-emerald-800 font-semibold" onClick={handlePasswordChange}>
-                      {pwSaved ? <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Updated</span> : "Update Password"}
+                    <Button
+                      className="bg-emerald-700 hover:bg-emerald-800 font-semibold min-w-[140px]"
+                      onClick={handlePasswordChange}
+                      disabled={pwSaving}
+                    >
+                      {pwSaving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : pwSaved ? (
+                        <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Updated</span>
+                      ) : "Update Password"}
                     </Button>
                   </div>
                 </CardContent>
@@ -262,28 +354,34 @@ export default function CommissionSettings() {
                   <CardTitle className="text-base">Notification Preferences</CardTitle>
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
-                  {[
-                    { label: "New agent verification submitted", desc: "When an agent submits credentials for review", enabled: true },
-                    { label: "Listing audit required", desc: "When a property listing is awaiting your review", enabled: true },
-                    { label: "Commission activity alerts", desc: "When a submission is approved or rejected", enabled: false },
-                    { label: "Priority escalations", desc: "When a submission is marked high priority", enabled: true },
-                    { label: "Weekly summary digest", desc: "A weekly report of commission activity and pending items", enabled: true },
-                    { label: "System alerts", desc: "Automated system events and duplicate title detections", enabled: false },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-start justify-between gap-4 py-3 border-b last:border-0">
+                  {NOTIF_ITEMS.map((item) => (
+                    <div key={item.key} className="flex items-start justify-between gap-4 py-3 border-b last:border-0">
                       <div>
                         <p className="text-sm font-semibold">{item.label}</p>
                         <p className="text-xs text-muted-foreground mt-0.5">{item.desc}</p>
                       </div>
                       <label className="relative inline-flex items-center cursor-pointer flex-shrink-0 mt-0.5">
-                        <input type="checkbox" defaultChecked={item.enabled} className="sr-only peer" />
+                        <input
+                          type="checkbox"
+                          checked={notifPrefs[item.key]}
+                          onChange={(e) => setNotifPrefs((prev) => ({ ...prev, [item.key]: e.target.checked }))}
+                          className="sr-only peer"
+                        />
                         <div className="w-10 h-5 bg-muted rounded-full peer-checked:bg-emerald-700 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-5 after:shadow-sm" />
                       </label>
                     </div>
                   ))}
                   <div className="pt-2 flex justify-end">
-                    <Button className="bg-emerald-700 hover:bg-emerald-800 font-semibold" onClick={handleSave}>
-                      {saved ? <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Saved</span> : "Save Preferences"}
+                    <Button
+                      className="bg-emerald-700 hover:bg-emerald-800 font-semibold min-w-[140px]"
+                      onClick={handleNotifSave}
+                      disabled={notifSaving}
+                    >
+                      {notifSaving ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : notifSaved ? (
+                        <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Saved</span>
+                      ) : "Save Preferences"}
                     </Button>
                   </div>
                 </CardContent>

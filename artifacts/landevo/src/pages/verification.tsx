@@ -525,7 +525,7 @@ export default function Verification() {
                               className="h-8 w-8 text-primary"
                               asChild
                             >
-                              <a href={`/listings/${v.listingId}`}>
+                              <a href={`/marketplace/${v.listingId}`}>
                                 <ExternalLink className="w-4 h-4" />
                               </a>
                             </Button>
@@ -638,7 +638,7 @@ export default function Verification() {
                       variant="outline"
                       asChild
                     >
-                      <a href="/listings">Submit a Listing</a>
+                      <a href="/listings/create">Submit a Listing</a>
                     </Button>
                   </>
                 )}

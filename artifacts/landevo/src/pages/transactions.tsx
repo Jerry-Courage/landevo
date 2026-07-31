@@ -4,9 +4,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download, FileText, ShieldCheck, MapPin, CheckCircle2, Circle, AlertCircle, Phone, Loader2, ArrowRightLeft } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Download, FileText, ShieldCheck, MapPin, CheckCircle2, Circle, AlertCircle,
+  Phone, Loader2, ArrowRightLeft, Check, X,
+} from "lucide-react";
 import { formatCurrency, formatDate } from "@/lib/format";
-import { useListTransactions } from "@workspace/api-client-react";
+import {
+  useListTransactions, useAcceptOffer, useRejectOffer, useUpdateTransactionStatus,
+  getListTransactionsQueryKey,
+} from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import type { Transaction, TransactionStatus } from "@workspace/api-client-react";
 
 const STATUS_ORDER: TransactionStatus[] = [
@@ -35,6 +46,7 @@ function statusBadge(s: TransactionStatus) {
   if (s === "completed") return <Badge className="bg-green-100 text-green-800 border-green-200 font-bold text-[10px]">COMPLETED</Badge>;
   if (s === "cancelled") return <Badge className="bg-red-100 text-red-800 border-red-200 font-bold text-[10px]">CANCELLED</Badge>;
   if (s === "funds_deposited" || s === "escrow_opened") return <Badge className="bg-amber-100 text-amber-800 border-amber-200 font-bold text-[10px]">IN ESCROW</Badge>;
+  if (s === "offer_made") return <Badge className="bg-blue-100 text-blue-800 border-blue-200 font-bold text-[10px]">OFFER PENDING</Badge>;
   return <Badge className="bg-slate-100 text-slate-700 border-slate-200 font-bold text-[10px]">{statusLabel(s).toUpperCase()}</Badge>;
 }
 
@@ -43,9 +55,24 @@ function stepIndex(status: TransactionStatus): number {
   return idx >= 0 ? idx : 0;
 }
 
-function TransactionDetail({ tx }: { tx: Transaction }) {
+function TransactionDetail({
+  tx,
+  onAccept,
+  onReject,
+  onAdvance,
+  onCancel,
+  actionPending,
+}: {
+  tx: Transaction;
+  onAccept: (offerId: number) => void;
+  onReject: (offerId: number) => void;
+  onAdvance: (txId: number, status: TransactionStatus) => void;
+  onCancel: (txId: number) => void;
+  actionPending: boolean;
+}) {
   const currentStep = stepIndex(tx.status);
   const progress = tx.status === "completed" ? 100 : Math.round(((currentStep + 1) / STATUS_ORDER.length) * 100);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   return (
     <div className="flex flex-col min-h-full bg-muted/10">
@@ -58,12 +85,12 @@ function TransactionDetail({ tx }: { tx: Transaction }) {
             )}
             {statusBadge(tx.status)}
           </div>
-          
+
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">{tx.listingTitle}</h1>
               <p className="text-muted-foreground mt-1 text-sm font-medium">
-                Started {formatDate(tx.createdAt)} • Managed by Landevo Institutional Escrow Services
+                Started {formatDate(tx.createdAt)} · Managed by Landevo Institutional Escrow Services
               </p>
             </div>
             <div className="flex gap-3">
@@ -76,10 +103,72 @@ function TransactionDetail({ tx }: { tx: Transaction }) {
 
       <div className="flex-1 p-6 md:p-8 max-w-7xl mx-auto w-full">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
+
           {/* Main Left Column */}
           <div className="lg:col-span-2 space-y-6">
-            
+
+            {/* Agent Action Card — offer_made */}
+            {tx.status === "offer_made" && (
+              <Card className="overflow-hidden border-t-4 border-t-blue-500 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3 mb-5">
+                    <AlertCircle className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-blue-800 text-sm mb-1">Offer Awaiting Your Decision</h4>
+                      <p className="text-xs text-blue-700/90 leading-relaxed">
+                        <strong>{tx.buyerName}</strong> has offered <strong>{formatCurrency(tx.offerAmount)}</strong> for this property.
+                        Accept to open escrow or reject to decline this offer.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <Button
+                      className="flex-1 font-bold bg-green-600 hover:bg-green-700 h-11"
+                      disabled={actionPending}
+                      onClick={() => onAccept(tx.offerId)}
+                    >
+                      {actionPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Check className="w-4 h-4 mr-2" />}
+                      Accept Offer
+                    </Button>
+                    <Button
+                      variant="outline"
+                      className="flex-1 font-bold text-red-600 border-red-200 hover:bg-red-50 h-11"
+                      disabled={actionPending}
+                      onClick={() => onReject(tx.offerId)}
+                    >
+                      {actionPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <X className="w-4 h-4 mr-2" />}
+                      Reject Offer
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Agent Action Card — funds_deposited */}
+            {tx.status === "funds_deposited" && (
+              <Card className="overflow-hidden border-t-4 border-t-emerald-500 shadow-sm">
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-3 mb-5">
+                    <ShieldCheck className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="font-bold text-emerald-800 text-sm mb-1">Funds Confirmed in Escrow</h4>
+                      <p className="text-xs text-emerald-700/90 leading-relaxed">
+                        The buyer has deposited funds. Once you have completed the verification inspection, mark the verification as complete to proceed to settlement.
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    className="font-bold bg-emerald-600 hover:bg-emerald-700 h-11 w-full"
+                    disabled={actionPending}
+                    onClick={() => onAdvance(tx.id, "verification_complete")}
+                  >
+                    {actionPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                    Mark Verification Complete
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Value Card */}
             <Card className="overflow-hidden shadow-sm border-t-4 border-t-amber-500">
               <CardContent className="p-8">
@@ -104,13 +193,13 @@ function TransactionDetail({ tx }: { tx: Transaction }) {
                   </div>
                 </div>
 
-                {(tx.status === "accepted" || tx.status === "escrow_opened") && (
+                {tx.status === "accepted" && (
                   <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
                     <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
                     <div>
-                      <h5 className="font-bold text-amber-800 text-sm mb-1">Action Required: Awaiting Next Step</h5>
+                      <h5 className="font-bold text-amber-800 text-sm mb-1">Awaiting Buyer: Escrow Opening</h5>
                       <p className="text-xs text-amber-700/90 leading-relaxed font-medium">
-                        Current status: <strong>{statusLabel(tx.status)}</strong>. Proceed to open escrow and deposit funds.
+                        The buyer needs to open escrow and deposit funds before the next step.
                       </p>
                     </div>
                   </div>
@@ -173,7 +262,9 @@ function TransactionDetail({ tx }: { tx: Transaction }) {
                       )}
                     </div>
                   </div>
-                  <Button variant="outline" className="w-full text-xs font-semibold h-9">View Listing →</Button>
+                  <Button variant="outline" className="w-full text-xs font-semibold h-9" asChild>
+                    <a href={`/marketplace/${tx.listingId}`}>View Listing →</a>
+                  </Button>
                 </CardContent>
               </Card>
             </div>
@@ -222,7 +313,7 @@ function TransactionDetail({ tx }: { tx: Transaction }) {
 
           {/* Right Sidebar */}
           <div className="lg:col-span-1 space-y-6">
-            
+
             {/* Process Workflow */}
             <Card className="shadow-sm">
               <CardHeader className="pb-4 border-b">
@@ -231,7 +322,7 @@ function TransactionDetail({ tx }: { tx: Transaction }) {
               <CardContent className="p-6">
                 <div className="space-y-6 relative">
                   <div className="absolute left-2.5 top-2 bottom-2 w-px bg-border -z-10"></div>
-                  
+
                   {STATUS_ORDER.map((step, i) => {
                     const isDone = i < currentStep || tx.status === "completed";
                     const isCurrent = step === tx.status && tx.status !== "completed";
@@ -256,11 +347,39 @@ function TransactionDetail({ tx }: { tx: Transaction }) {
               </CardContent>
             </Card>
 
-            <div className="flex flex-col gap-3">
-              <Button variant="outline" className="w-full text-destructive border-destructive/30 hover:bg-destructive/5 font-semibold h-11">
-                Request Refund / Cancel
-              </Button>
-            </div>
+            {/* Cancel — only for cancellable statuses */}
+            {!["completed", "cancelled"].includes(tx.status) && (
+              <>
+                <Button
+                  variant="outline"
+                  className="w-full text-destructive border-destructive/30 hover:bg-destructive/5 font-semibold h-11"
+                  disabled={actionPending}
+                  onClick={() => setConfirmCancel(true)}
+                >
+                  Request Refund / Cancel
+                </Button>
+
+                <AlertDialog open={confirmCancel} onOpenChange={setConfirmCancel}>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Cancel this transaction?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will cancel the transaction for <strong>{tx.listingTitle}</strong>. Any escrowed funds will be returned to the buyer. This cannot be undone.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Keep Transaction</AlertDialogCancel>
+                      <AlertDialogAction
+                        className="bg-destructive hover:bg-destructive/90"
+                        onClick={() => { setConfirmCancel(false); onCancel(tx.id); }}
+                      >
+                        Yes, Cancel
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </>
+            )}
 
             <Card className="bg-sidebar text-white shadow-sm border-none">
               <CardContent className="p-5 flex items-center justify-between">
@@ -281,8 +400,19 @@ function TransactionDetail({ tx }: { tx: Transaction }) {
 }
 
 export default function Transactions() {
+  const queryClient = useQueryClient();
   const { data: transactions = [], isLoading } = useListTransactions();
   const [selectedId, setSelectedId] = useState<number | null>(null);
+
+  const invalidate = () =>
+    queryClient.invalidateQueries({ queryKey: getListTransactionsQueryKey() });
+
+  const acceptOffer = useAcceptOffer({ mutation: { onSuccess: invalidate } });
+  const rejectOffer = useRejectOffer({ mutation: { onSuccess: invalidate } });
+  const updateStatus = useUpdateTransactionStatus({ mutation: { onSuccess: invalidate } });
+
+  const actionPending =
+    acceptOffer.isPending || rejectOffer.isPending || updateStatus.isPending;
 
   const selected = transactions.find((t) => t.id === selectedId) ?? transactions[0] ?? null;
 
@@ -310,7 +440,6 @@ export default function Transactions() {
     );
   }
 
-  // If multiple transactions, show a selector at the top
   return (
     <AppLayout>
       {transactions.length > 1 && (
@@ -329,7 +458,16 @@ export default function Transactions() {
           ))}
         </div>
       )}
-      {selected && <TransactionDetail tx={selected} />}
+      {selected && (
+        <TransactionDetail
+          tx={selected}
+          onAccept={(offerId) => acceptOffer.mutate({ offerId })}
+          onReject={(offerId) => rejectOffer.mutate({ offerId })}
+          onAdvance={(txId, status) => updateStatus.mutate({ transactionId: txId, data: { status } })}
+          onCancel={(txId) => updateStatus.mutate({ transactionId: txId, data: { status: "cancelled" } })}
+          actionPending={actionPending}
+        />
+      )}
     </AppLayout>
   );
 }
