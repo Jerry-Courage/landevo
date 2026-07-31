@@ -1,13 +1,55 @@
-import React from "react";
+import React, { useState, useRef } from "react";
 import AppLayout from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ShieldCheck, CheckCircle2, AlertCircle, ExternalLink, Upload, Shield, Download, Lock } from "lucide-react";
+import { ShieldCheck, CheckCircle2, AlertCircle, ExternalLink, Upload, Lock, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 
+interface UploadedDoc {
+  name: string;
+  type: string;
+  url: string;
+}
+
 export default function Verification() {
+  const [uploadedDocs, setUploadedDocs] = useState<UploadedDoc[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleDocumentUpload = async (files: FileList) => {
+    setUploading(true);
+    setUploadError("");
+    for (const file of Array.from(files)) {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("name", file.name);
+      form.append("contentType", file.type);
+      form.append("size", String(file.size));
+      try {
+        const res = await fetch("/api/storage/uploads", {
+          method: "POST",
+          body: form,
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error((err as any).error ?? `Upload failed (${res.status})`);
+        }
+        const data = await res.json();
+        const ext = file.name.split(".").pop()?.toUpperCase() ?? "FILE";
+        setUploadedDocs((prev) => [
+          ...prev,
+          { name: file.name, type: ext, url: data.url },
+        ]);
+      } catch (e: any) {
+        setUploadError(e.message ?? "Upload failed");
+      }
+    }
+    setUploading(false);
+  };
+
   return (
     <AppLayout>
       <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-8">
@@ -70,7 +112,26 @@ export default function Verification() {
                   <CardTitle className="text-lg">Verification Documents</CardTitle>
                   <p className="text-sm text-muted-foreground mt-1">History of credentials submitted to the Land Commission.</p>
                 </div>
-                <Button size="sm" variant="outline" className="font-semibold h-9"><Upload className="w-4 h-4 mr-2"/> Upload New</Button>
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                    onChange={(e) => e.target.files && handleDocumentUpload(e.target.files)}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="font-semibold h-9"
+                    disabled={uploading}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {uploading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+                    {uploading ? "Uploading…" : "Upload New"}
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <Table>
@@ -118,6 +179,26 @@ export default function Verification() {
                     </TableRow>
                   </TableBody>
                 </Table>
+                {uploadedDocs.map((doc, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium text-sm flex items-center gap-2">
+                      <FileIcon className="w-4 h-4 text-muted-foreground" />
+                      {doc.name}
+                    </TableCell>
+                    <TableCell className="text-sm">{doc.type}</TableCell>
+                    <TableCell><Badge variant="outline" className="text-[10px] font-bold text-amber-600 border-amber-400">PENDING</Badge></TableCell>
+                    <TableCell>
+                      <a href={doc.url} target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary"><ExternalLink className="w-4 h-4" /></Button>
+                      </a>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {uploadError && (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-xs text-red-600 text-center py-3">{uploadError}</TableCell>
+                  </TableRow>
+                )}
                 <div className="p-4 border-t text-center bg-muted/10">
                   <a href="#" className="text-xs font-semibold text-primary hover:underline">View archived submissions</a>
                 </div>
