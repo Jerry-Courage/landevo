@@ -1,12 +1,13 @@
 import React from "react";
 import { Link, useLocation } from "wouter";
-import { Compass, LayoutDashboard, Store, ArrowRightLeft, MessageSquare, Settings, Bell, Search, LogOut } from "lucide-react";
+import { Compass, LayoutDashboard, Store, ArrowRightLeft, MessageSquare, Settings, Bell, Search, LogOut, HandCoins } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
 const NAV_ITEMS = [
   { path: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { path: "/marketplace", label: "Marketplace", icon: Store },
+  { path: "/offers", label: "Offers", icon: HandCoins },
   { path: "/transactions", label: "Transactions", icon: ArrowRightLeft },
   { path: "/messages", label: "Messages", icon: MessageSquare },
   { path: "/settings", label: "Settings", icon: Settings },

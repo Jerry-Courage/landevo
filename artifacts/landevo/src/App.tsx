@@ -10,6 +10,7 @@ import Transactions from '@/pages/transactions';
 import Messages from '@/pages/messages';
 import Notifications from '@/pages/notifications';
 import Settings from '@/pages/settings';
+import AgentOffers from '@/pages/agent/offers';
 import NotFound from '@/pages/not-found';
 import CommissionSettings from '@/pages/commission/settings';
 
@@ -102,6 +103,7 @@ function Router() {
       <Route path="/marketplace"       component={() => <AgentRoute component={Marketplace} />} />
       <Route path="/marketplace/:id"   component={() => <AgentRoute component={PropertyDetail} />} />
       <Route path="/listings/create"   component={() => <AgentRoute component={CreateListing} />} />
+      <Route path="/offers"             component={() => <AgentRoute component={AgentOffers} />} />
       <Route path="/verification"      component={() => <AgentRoute component={Verification} />} />
       <Route path="/transactions"      component={() => <AgentRoute component={Transactions} />} />
       <Route path="/messages"          component={() => <AgentRoute component={Messages} />} />
