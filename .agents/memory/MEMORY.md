@@ -1,1 +1,2 @@
 - [Artifact registration on import](artifact-registration-import.md) — GitHub-imported artifact.toml files are not auto-registered; listArtifacts() returns empty and the proxy can't route until createArtifact is called.
+- [Workspace package Vite dep optimizer](vite-workspace-dep-optimizer.md) — @workspace/* packages (TypeScript source exports) must be in optimizeDeps.exclude or Vite crashes with a blank page at startup.
