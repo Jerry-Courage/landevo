@@ -1,65 +1,50 @@
-# Landevo — Secure Land Transaction Marketplace
+# Landevo
 
-A Nigerian real estate marketplace connecting verified agents, government commissions, and buyers through a digital escrow system.
+A secure land transaction marketplace connecting verified agents, government commissions, and buyers through an immutable digital escrow system.
 
 ## Stack
 
-- **Frontend**: React + Vite + Tailwind CSS + shadcn/ui (`artifacts/landevo`)
-- **Backend**: Express API server (`artifacts/api-server`)
-- **Database**: PostgreSQL via Drizzle ORM (`lib/db`)
-- **Auth**: Session-based (express-session + connect-pg-simple)
-- **Monorepo**: pnpm workspaces
+- **Frontend**: React 19 + Vite + Tailwind CSS 4 + shadcn/ui + Wouter + React Query (`artifacts/landevo/`)
+- **Backend**: Express 5 API server with session auth (`artifacts/api-server/`)
+- **Database**: PostgreSQL via Drizzle ORM (`lib/db/`)
+- **File storage**: Cloudinary (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`)
+- **API contract**: OpenAPI spec → Orval codegen → Zod schemas + React Query hooks (`lib/api-spec/`, `lib/api-zod/`, `lib/api-client-react/`)
 
-## Running the project
+## Running the app
 
-Two services must be running:
+Two workflows run the app:
 
-| Service | Workflow | Port |
-|---------|----------|------|
-| API server | `API Server` | 8080 |
-| Frontend | `artifacts/landevo: web` | 21072 |
+| Workflow | Command | Port |
+|---|---|---|
+| `API Server` | `PORT=8080 pnpm --filter @workspace/api-server run dev` | 8080 |
+| `artifacts/landevo: web` | `pnpm --filter @workspace/landevo run dev` | 21072 |
 
-Both workflows are configured and auto-start. The frontend proxies `/api` requests to the API server.
+The frontend proxies `/api` requests to the API server at port 8080.
 
-## Test accounts (password: `password123`)
+## Key commands
 
-| Role | Email |
-|------|-------|
-| Agent | agent@landevo.ng |
-| Buyer | buyer@landevo.ng |
-| Commission Officer | commission@landevo.ng |
-| System Admin | admin@landevo.ng |
-
-## Project structure
-
-```
-artifacts/
-  api-server/     Express API (routes, middleware, build)
-  landevo/        React frontend (pages, components, hooks)
-lib/
-  db/             Drizzle schema + seed script
-  api-spec/       OpenAPI spec + orval codegen config
-  api-zod/        Generated Zod validation schemas
-  api-client-react/ Generated React Query hooks
-```
-
-## Database
-
-Schema is managed with Drizzle. To push schema changes:
 ```bash
+# Install dependencies
+pnpm install
+
+# Push DB schema changes
 pnpm --filter @workspace/db run push
-```
 
-To re-seed demo data:
-```bash
+# Seed demo data
 pnpm --filter @workspace/db run seed
+
+# Regenerate API client after spec changes
+pnpm --filter @workspace/api-spec run codegen
 ```
 
-## External services
+## Required secrets
 
-- **Cloudinary** — used for file storage and uploads. Credentials are stored as Replit Secrets (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`).
-- **Google Cloud Storage** — also referenced in storage routes; optional alternative to Cloudinary. Requires `GOOGLE_APPLICATION_CREDENTIALS` if used.
+- `SESSION_SECRET` — express-session secret (set)
+- `DATABASE_URL` — auto-provisioned by Replit
+- `CLOUDINARY_CLOUD_NAME` — Cloudinary cloud name (set)
+- `CLOUDINARY_API_KEY` — Cloudinary API key (set)
+- `CLOUDINARY_API_SECRET` — Cloudinary API secret (set)
 
 ## User preferences
 
-- Keep the existing monorepo structure and pnpm workspace conventions
+- Keep the project's existing structure and stack
