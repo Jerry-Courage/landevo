@@ -22,11 +22,53 @@ export default function CommissionSettings() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>("profile");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pwSaved, setPwSaved] = useState(false);
+  const [pwError, setPwError] = useState("");
+
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
   const handleSave = () => {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+  };
+
+  const handlePasswordChange = async () => {
+    setPwError("");
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setPwError("All password fields are required.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPwError("New passwords do not match.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPwError("New password must be at least 8 characters.");
+      return;
+    }
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setPwError(data.message ?? "Failed to update password.");
+        return;
+      }
+      setPwSaved(true);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setTimeout(() => setPwSaved(false), 2500);
+    } catch {
+      setPwError("Network error. Please try again.");
+    }
   };
 
   return (
@@ -35,9 +77,9 @@ export default function CommissionSettings() {
         {/* Header */}
         <div>
           <p className="text-xs font-bold text-muted-foreground tracking-widest mb-1">ACCOUNT MANAGEMENT</p>
-          <h1 className="text-2xl font-bold tracking-tight">Officer Settings</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Commission Settings</h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            Manage your commission officer profile, credentials, and notification preferences.
+            Manage your commission profile, credentials, and notification preferences.
           </p>
         </div>
 
@@ -69,7 +111,7 @@ export default function CommissionSettings() {
               <>
                 <Card className="bg-white shadow-sm">
                   <CardHeader className="pb-4 border-b">
-                    <CardTitle className="text-base">Officer Identity</CardTitle>
+                    <CardTitle className="text-base">Commission Identity</CardTitle>
                   </CardHeader>
                   <CardContent className="p-6 space-y-5">
                     {/* Avatar */}
@@ -78,7 +120,7 @@ export default function CommissionSettings() {
                         {user?.name?.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase() ?? "LC"}
                       </div>
                       <div>
-                        <p className="font-semibold text-sm">{user?.name ?? "Commission Officer"}</p>
+                        <p className="font-semibold text-sm">{user?.name ?? "Commission Admin"}</p>
                         <p className="text-xs text-muted-foreground">{user?.email}</p>
                         <Badge className="mt-1.5 text-[10px] bg-emerald-100 text-emerald-800 hover:bg-emerald-100 border-none font-bold">
                           Commission Admin
@@ -93,8 +135,8 @@ export default function CommissionSettings() {
                           <Input defaultValue={user?.name ?? ""} className="h-10" />
                         </div>
                         <div className="space-y-1.5">
-                          <label className="text-xs font-semibold text-muted-foreground tracking-wider">OFFICER ID</label>
-                          <Input defaultValue="OFF-001" className="h-10 bg-muted/30" readOnly />
+                          <label className="text-xs font-semibold text-muted-foreground tracking-wider">COMMISSION ID</label>
+                          <Input defaultValue={`CMN-${String(user?.id ?? "001").padStart(3, "0")}`} className="h-10 bg-muted/30" readOnly />
                         </div>
                       </div>
                       <div className="space-y-1.5">
@@ -104,7 +146,7 @@ export default function CommissionSettings() {
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-muted-foreground tracking-wider">PHONE</label>
-                          <Input type="tel" defaultValue="+234 801 000 0001" className="h-10" />
+                          <Input type="tel" placeholder="+234 800 000 0000" className="h-10" />
                         </div>
                         <div className="space-y-1.5">
                           <label className="text-xs font-semibold text-muted-foreground tracking-wider">JURISDICTION</label>
@@ -140,16 +182,29 @@ export default function CommissionSettings() {
                     <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-xs font-bold text-emerald-800">Session Active</p>
-                      <p className="text-xs text-emerald-700/80 mt-0.5">Your officer session is authenticated and secure.</p>
+                      <p className="text-xs text-emerald-700/80 mt-0.5">Your commission session is authenticated and secure.</p>
                     </div>
                   </div>
 
                   <div className="border-t pt-5 space-y-4">
                     <h4 className="text-sm font-bold">Change Password</h4>
+
+                    {pwError && (
+                      <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-lg text-xs text-red-700 font-medium">
+                        <AlertCircle className="w-4 h-4 flex-shrink-0" /> {pwError}
+                      </div>
+                    )}
+
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-muted-foreground tracking-wider">CURRENT PASSWORD</label>
                       <div className="relative max-w-md">
-                        <Input type="password" placeholder="Current password" className="h-10 pr-10" />
+                        <Input
+                          type="password"
+                          placeholder="Current password"
+                          className="h-10 pr-10"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                        />
                       </div>
                     </div>
                     <div className="space-y-1.5">
@@ -157,8 +212,10 @@ export default function CommissionSettings() {
                       <div className="relative max-w-md">
                         <Input
                           type={showPassword ? "text" : "password"}
-                          placeholder="Min. 12 characters"
+                          placeholder="Min. 8 characters"
                           className="h-10 pr-10"
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value)}
                         />
                         <button
                           type="button"
@@ -171,13 +228,28 @@ export default function CommissionSettings() {
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-xs font-semibold text-muted-foreground tracking-wider">CONFIRM NEW PASSWORD</label>
-                      <Input type="password" placeholder="Repeat new password" className="h-10 max-w-md" />
+                      <div className="relative max-w-md">
+                        <Input
+                          type={showConfirm ? "text" : "password"}
+                          placeholder="Repeat new password"
+                          className="h-10 pr-10"
+                          value={confirmPassword}
+                          onChange={(e) => setConfirmPassword(e.target.value)}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirm((v) => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
                   <div className="border-t pt-4 flex justify-end">
-                    <Button className="bg-emerald-700 hover:bg-emerald-800 font-semibold" onClick={handleSave}>
-                      {saved ? <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Updated</span> : "Update Password"}
+                    <Button className="bg-emerald-700 hover:bg-emerald-800 font-semibold" onClick={handlePasswordChange}>
+                      {pwSaved ? <span className="flex items-center gap-2"><CheckCircle2 className="w-4 h-4" /> Updated</span> : "Update Password"}
                     </Button>
                   </div>
                 </CardContent>
@@ -193,7 +265,7 @@ export default function CommissionSettings() {
                   {[
                     { label: "New agent verification submitted", desc: "When an agent submits credentials for review", enabled: true },
                     { label: "Listing audit required", desc: "When a property listing is awaiting your review", enabled: true },
-                    { label: "Officer activity alerts", desc: "When another officer approves or rejects a submission", enabled: false },
+                    { label: "Commission activity alerts", desc: "When a submission is approved or rejected", enabled: false },
                     { label: "Priority escalations", desc: "When a submission is marked high priority", enabled: true },
                     { label: "Weekly summary digest", desc: "A weekly report of commission activity and pending items", enabled: true },
                     { label: "System alerts", desc: "Automated system events and duplicate title detections", enabled: false },
@@ -229,7 +301,7 @@ export default function CommissionSettings() {
                     <div>
                       <p className="text-xs font-bold text-amber-800">Elevated Access Role</p>
                       <p className="text-xs text-amber-700/80 mt-0.5">
-                        Commission admins are provisioned directly by the Director. Contact your supervising officer to modify access.
+                        Commission admins are provisioned directly by the Director. Contact the system administrator to modify access.
                       </p>
                     </div>
                   </div>
@@ -239,7 +311,6 @@ export default function CommissionSettings() {
                       { permission: "Review agent verifications", granted: true },
                       { permission: "Approve & reject listings", granted: true },
                       { permission: "View activity log", granted: true },
-                      { permission: "Manage officer accounts", granted: true },
                       { permission: "Export commission reports", granted: true },
                       { permission: "Modify system configuration", granted: false },
                     ].map((p) => (

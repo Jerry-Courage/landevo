@@ -67,54 +67,6 @@ router.get("/listings", requireRole("commission_admin"), async (req, res) => {
   return res.json(mapped);
 });
 
-// GET /api/commission/officers — commission_admin users with stats
-router.get("/officers", requireRole("commission_admin"), async (req, res) => {
-  const officers = await db
-    .select({
-      id:        usersTable.id,
-      name:      usersTable.name,
-      email:     usersTable.email,
-      isActive:  usersTable.isActive,
-      createdAt: usersTable.createdAt,
-      // Reviews = verifications where this officer was assigned
-      reviews: sql<number>`CAST(COALESCE((
-        SELECT COUNT(*) FROM verifications
-        WHERE officer_id = ${usersTable.id}
-          AND status IN ('approved', 'rejected')
-      ), 0) AS INT)`,
-      // Active = currently assigned in_review verifications
-      assignments: sql<number>`CAST(COALESCE((
-        SELECT COUNT(*) FROM verifications
-        WHERE officer_id = ${usersTable.id}
-          AND status = 'in_review'
-      ), 0) AS INT)`,
-    })
-    .from(usersTable)
-    .where(eq(usersTable.role, "commission_admin"))
-    .orderBy(usersTable.createdAt);
-
-  const COLORS = [
-    "bg-emerald-800", "bg-emerald-700", "bg-teal-700",
-    "bg-slate-700", "bg-emerald-600", "bg-teal-600", "bg-slate-500",
-  ];
-
-  const mapped = officers.map((o, i) => ({
-    id:          `OFF-${String(o.id).padStart(3, "0")}`,
-    name:        o.name,
-    email:       o.email,
-    role:        "Commission Admin",
-    state:       "—",
-    assignments: o.assignments,
-    reviews:     o.reviews,
-    status:      o.isActive ? "Active" : "Inactive",
-    joined:      new Date(o.createdAt).toLocaleDateString("en-NG", { month: "short", year: "numeric" }),
-    initials:    o.name.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase(),
-    color:       COLORS[i % COLORS.length],
-  }));
-
-  return res.json(mapped);
-});
-
 // GET /api/commission/audit — activity log filtered to commission-relevant actions
 router.get("/audit", requireRole("commission_admin"), async (req, res) => {
   const rows = await db

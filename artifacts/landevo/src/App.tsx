@@ -36,7 +36,6 @@ import CommissionDashboard from '@/pages/commission/dashboard';
 import CommissionVerifications from '@/pages/commission/verifications';
 import CommissionListings from '@/pages/commission/listings';
 import CommissionAudit from '@/pages/commission/audit';
-import CommissionOfficers from '@/pages/commission/officers';
 
 import { AuthProvider, useAuth } from '@/hooks/use-auth';
 
@@ -124,7 +123,6 @@ function Router() {
       <Route path="/commission/verifications" component={() => <CommissionRoute component={CommissionVerifications} />} />
       <Route path="/commission/listings"      component={() => <CommissionRoute component={CommissionListings} />} />
       <Route path="/commission/audit"         component={() => <CommissionRoute component={CommissionAudit} />} />
-      <Route path="/commission/officers"      component={() => <CommissionRoute component={CommissionOfficers} />} />
       <Route path="/commission/settings"      component={() => <CommissionRoute component={CommissionSettings} />} />
 
       {/* System Admin Routes */}
