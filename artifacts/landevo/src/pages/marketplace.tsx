@@ -78,16 +78,23 @@ export default function Marketplace() {
   const minPriceRaw = minPrice ? parseFloat(minPrice) * 1_000_000 : undefined;
   const maxPriceRaw = maxPrice ? parseFloat(maxPrice) * 1_000_000 : undefined;
 
+  // If exactly one type is selected we can push it to the API; otherwise fetch
+  // all and filter the multi-selection client-side (API accepts a single value).
+  const apiPropertyType =
+    selectedTypes.size === 1 ? [...selectedTypes][0] : undefined;
+
   const { data: raw = [], isLoading } = useListListings({
-    search:   search || undefined,
-    minPrice: minPriceRaw,
-    maxPrice: maxPriceRaw,
+    search:       search || undefined,
+    minPrice:     minPriceRaw,
+    maxPrice:     maxPriceRaw,
+    propertyType: apiPropertyType,
   });
 
-  // client-side: filter by selected property types (multi-select; API only takes one)
-  const afterTypeFilter = selectedTypes.size === 0
-    ? raw
-    : raw.filter((l) => selectedTypes.has(l.propertyType as PropertyType));
+  // Client-side pass for multi-type selections (single-type already filtered by API)
+  const afterTypeFilter =
+    selectedTypes.size <= 1
+      ? raw
+      : raw.filter((l) => selectedTypes.has(l.propertyType as PropertyType));
 
   const listings = sortListings(afterTypeFilter, sort);
 

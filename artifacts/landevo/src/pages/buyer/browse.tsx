@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Map, List, MapPin, ShieldCheck, Check, ChevronDown, Loader2 } from "lucide-react";
+import { Map, List, MapPin, ShieldCheck, Check, ChevronDown, Loader2, X } from "lucide-react";
 import { Link } from "wouter";
 import { useListListings } from "@workspace/api-client-react";
 import type { Listing } from "@workspace/api-client-react";
@@ -38,26 +38,27 @@ export default function BuyerBrowse() {
 
   const deferredSearch = useDeferredValue(search);
 
-  const { data: listings = [], isLoading } = useListListings();
+  // Push as many filters as possible to the API.
+  // propertyType: API accepts a single value, so only pass it when exactly one
+  // type is checked; multi-select falls back to client-side filtering.
+  const apiPropertyType =
+    selectedTypes.length === 1 ? selectedTypes[0] : undefined;
 
-  // Client-side filter for type and price (API already filters by search/status)
-  const filtered = listings.filter((l: Listing) => {
-    if (selectedTypes.length > 0 && !selectedTypes.includes(l.propertyType)) return false;
-    if (minPrice && l.price < parseFloat(minPrice)) return false;
-    if (maxPrice && l.price > parseFloat(maxPrice)) return false;
-    if (deferredSearch) {
-      const q = deferredSearch.toLowerCase();
-      if (
-        !l.title.toLowerCase().includes(q) &&
-        !l.city.toLowerCase().includes(q) &&
-        !l.location.toLowerCase().includes(q)
-      )
-        return false;
-    }
-    return true;
+  const { data: listings = [], isLoading } = useListListings({
+    search:       deferredSearch || undefined,
+    minPrice:     minPrice ? parseFloat(minPrice) : undefined,
+    maxPrice:     maxPrice ? parseFloat(maxPrice) : undefined,
+    propertyType: apiPropertyType,
   });
 
-  const sorted = [...filtered].sort((a, b) => {
+  // Client-side pass: only needed for multi-type selections (single-type
+  // already filtered server-side above).
+  const filtered =
+    selectedTypes.length <= 1
+      ? listings
+      : listings.filter((l: Listing) => selectedTypes.includes(l.propertyType));
+
+  const sorted = [...filtered].sort((a: Listing, b: Listing) => {
     if (sort === "price_asc") return a.price - b.price;
     if (sort === "price_desc") return b.price - a.price;
     return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();

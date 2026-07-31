@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import AppLayout from "@/components/layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
@@ -20,16 +28,20 @@ import {
   ExternalLink,
   Lock,
   Loader2,
-  Upload,
+  Send,
   ShieldX,
   ShieldAlert,
 } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import {
   useListVerifications,
   useListNotifications,
+  useListListings,
+  useSubmitListingForVerification,
+  getListVerificationsQueryKey,
 } from "@workspace/api-client-react";
-import type { Verification } from "@workspace/api-client-react";
+import type { Verification, Listing } from "@workspace/api-client-react";
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -156,16 +168,51 @@ function VerificationStatusRow({ status }: { status: Verification["status"] }) {
 
 export default function Verification() {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabFilter>("all");
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [selectedListingId, setSelectedListingId] = useState<number | null>(null);
+  const [submitError, setSubmitError] = useState("");
 
   const { data: verifications = [], isLoading: loadingVerifications } =
     useListVerifications();
 
   const { data: notifications = [], isLoading: loadingNotifications } =
     useListNotifications({ limit: 5 });
+
+  // Fetch agent's own listings to populate the submit dialog
+  const { data: agentListings = [], isLoading: loadingListings } =
+    useListListings(undefined, { query: { enabled: submitDialogOpen } });
+
+  // Only show listings that haven't already been submitted for verification
+  const submittedListingIds = new Set(verifications.map((v) => v.listingId));
+  const eligibleListings = agentListings.filter(
+    (l: Listing) =>
+      !submittedListingIds.has(l.id) &&
+      (l.status === "active" || l.status === "draft" || l.status === "pending_verification"),
+  );
+
+  const submitMutation = useSubmitListingForVerification({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: getListVerificationsQueryKey() });
+        setSubmitDialogOpen(false);
+        setSelectedListingId(null);
+        setSubmitError("");
+      },
+      onError: (err: unknown) => {
+        const msg =
+          err instanceof Error ? err.message : "Failed to submit for verification.";
+        setSubmitError(msg);
+      },
+    },
+  });
+
+  function handleSubmit() {
+    if (!selectedListingId) return;
+    setSubmitError("");
+    submitMutation.mutate({ listingId: selectedListingId });
+  }
 
   const overallStatus = computeOverallStatus(verifications);
 
@@ -183,34 +230,6 @@ export default function Verification() {
     {} as Record<string, number>,
   );
 
-  const handleDocumentUpload = async (files: FileList) => {
-    setUploading(true);
-    setUploadError("");
-    for (const file of Array.from(files)) {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("name", file.name);
-      form.append("contentType", file.type);
-      form.append("size", String(file.size));
-      try {
-        const res = await fetch("/api/storage/uploads", {
-          method: "POST",
-          body: form,
-        });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          throw new Error(
-            (err as Record<string, string>).error ??
-              `Upload failed (${res.status})`,
-          );
-        }
-      } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : "Upload failed";
-        setUploadError(msg);
-      }
-    }
-    setUploading(false);
-  };
 
   // ── Status banner config ──
   const bannerConfig: Record<
@@ -247,6 +266,82 @@ export default function Verification() {
 
   return (
     <AppLayout>
+      {/* ── Submit for Verification Dialog ───────────────────────────────── */}
+      <Dialog open={submitDialogOpen} onOpenChange={(o) => { setSubmitDialogOpen(o); if (!o) { setSelectedListingId(null); setSubmitError(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Submit Listing for Verification</DialogTitle>
+            <DialogDescription>
+              Choose one of your listings to send to the Land Commission for review.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            {loadingListings ? (
+              <div className="flex items-center justify-center py-6 gap-2 text-muted-foreground">
+                <Loader2 className="w-4 h-4 animate-spin" /> Loading your listings…
+              </div>
+            ) : eligibleListings.length === 0 ? (
+              <div className="text-center py-6">
+                <ShieldAlert className="w-8 h-8 text-muted-foreground mx-auto mb-2 opacity-50" />
+                <p className="text-sm text-muted-foreground font-medium">
+                  All your listings have already been submitted for verification.
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Create a new listing or wait for existing reviews to complete.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                {eligibleListings.map((listing: Listing) => (
+                  <button
+                    key={listing.id}
+                    onClick={() => setSelectedListingId(listing.id)}
+                    className={`w-full text-left rounded-lg border p-3 transition-colors ${
+                      selectedListingId === listing.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50 hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-sm truncate">{listing.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {listing.city}, {listing.state} · {listing.propertyType}
+                        </p>
+                      </div>
+                      {selectedListingId === listing.id && (
+                        <CheckCircle2 className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {submitError && (
+              <p className="text-xs text-red-600 font-medium">{submitError}</p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSubmitDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!selectedListingId || submitMutation.isPending}
+              onClick={handleSubmit}
+            >
+              {submitMutation.isPending ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Submitting…</>
+              ) : (
+                <><Send className="w-4 h-4 mr-2" /> Submit</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="p-6 md:p-8 max-w-6xl mx-auto space-y-8">
         {/* Header */}
         <div>
@@ -354,32 +449,15 @@ export default function Verification() {
                     Listing verifications submitted to the Land Commission.
                   </p>
                 </div>
-                <div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    multiple
-                    accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                    onChange={(e) =>
-                      e.target.files && handleDocumentUpload(e.target.files)
-                    }
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="font-semibold h-9"
-                    disabled={uploading}
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {uploading ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Upload className="w-4 h-4 mr-2" />
-                    )}
-                    {uploading ? "Uploading…" : "Upload Document"}
-                  </Button>
-                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="font-semibold h-9"
+                  onClick={() => setSubmitDialogOpen(true)}
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Submit for Verification
+                </Button>
               </CardHeader>
               <CardContent className="p-0">
                 {loadingVerifications ? (
@@ -456,11 +534,6 @@ export default function Verification() {
                       ))}
                     </TableBody>
                   </Table>
-                )}
-                {uploadError && (
-                  <div className="p-3 border-t text-center">
-                    <span className="text-xs text-red-600">{uploadError}</span>
-                  </div>
                 )}
               </CardContent>
             </Card>
