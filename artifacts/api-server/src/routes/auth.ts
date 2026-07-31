@@ -83,6 +83,7 @@ router.post("/register", async (req, res) => {
 
   req.session.userId = user.id;
   req.session.userRole = user.role;
+  req.session.userName = user.name;
 
   logger.info({ userId: user.id, role: user.role }, "User registered");
   return res.status(201).json({ user });
@@ -116,6 +117,7 @@ router.post("/login", async (req, res) => {
 
   req.session.userId = user.id;
   req.session.userRole = user.role;
+  req.session.userName = user.name;
 
   const { passwordHash: _pw, ...safeUser } = user;
   logger.info({ userId: user.id, role: user.role }, "User logged in");
