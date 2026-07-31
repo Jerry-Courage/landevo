@@ -883,6 +883,10 @@ components:
           type: array
           items:
             type: string
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListingDocument'
         verificationId:
           type: ["integer", "null"]
         createdAt:
@@ -929,7 +933,22 @@ components:
           type: array
           items:
             type: string
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListingDocument'
       required: [title, description, price, location, address, city, state, areaSqm, propertyType]
+
+    ListingDocument:
+      type: object
+      properties:
+        name:
+          type: string
+        url:
+          type: string
+        contentType:
+          type: string
+      required: [name, url, contentType]
 
     ListingUpdate:
       type: object
@@ -963,6 +982,10 @@ components:
           type: array
           items:
             type: string
+        documents:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListingDocument'
 
     # ── Verifications ─────────────────────────────────────────────────────
     Verification:

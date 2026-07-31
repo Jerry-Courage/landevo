@@ -4,7 +4,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, AlertTriangle, Upload, X, ImageIcon, CheckCircle2, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Save, AlertTriangle, Upload, X, ImageIcon, CheckCircle2, Loader2, Send, FileText } from "lucide-react";
+
+interface ListingDocument {
+  name: string;
+  url: string;
+  contentType: string;
+}
 import { Link, useLocation } from "wouter";
 import { useCreateListing, useSubmitListingForVerification, getListListingsQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -40,6 +46,11 @@ export default function CreateListing() {
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Document upload
+  const [uploadedDocuments, setUploadedDocuments] = useState<ListingDocument[]>([]);
+  const [uploadingDocs, setUploadingDocs] = useState(false);
+  const docFileInputRef = useRef<HTMLInputElement>(null);
+
   // Post-creation state
   const [createdListingId, setCreatedListingId] = useState<number | null>(null);
 
@@ -63,6 +74,26 @@ export default function CreateListing() {
       },
     },
   });
+
+  const handleDocumentUpload = async (files: FileList) => {
+    setUploadingDocs(true);
+    for (const file of Array.from(files)) {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("name", file.name);
+      form.append("contentType", file.type || "application/octet-stream");
+      form.append("size", String(file.size));
+      try {
+        const res = await fetch("/api/storage/uploads", { method: "POST", body: form, credentials: "include" });
+        if (res.ok) {
+          const { uploadURL } = await res.json() as { uploadURL: string };
+          setUploadedDocuments(prev => [...prev, { name: file.name, url: uploadURL, contentType: file.type || "application/octet-stream" }]);
+        }
+      } catch { /* skip */ }
+    }
+    setUploadingDocs(false);
+    if (docFileInputRef.current) docFileInputRef.current.value = "";
+  };
 
   const handleImageUpload = async (files: FileList) => {
     setUploading(true);
@@ -113,6 +144,7 @@ export default function CreateListing() {
         ...(bedrooms ? { bedrooms: parseInt(bedrooms) } : {}),
         ...(bathrooms ? { bathrooms: parseInt(bathrooms) } : {}),
         images: uploadedImages,
+        documents: uploadedDocuments,
       },
     });
   };
@@ -179,7 +211,7 @@ export default function CreateListing() {
                 type="submit"
                 variant="outline"
                 className="bg-background font-semibold"
-                disabled={createListing.isPending || uploading}
+                disabled={createListing.isPending || uploading || uploadingDocs}
               >
                 <Save className="w-4 h-4 mr-2" />
                 {createListing.isPending ? "Saving…" : "Save Draft"}
@@ -391,6 +423,63 @@ export default function CreateListing() {
                 </CardContent>
               </Card>
 
+              {/* Property Documents */}
+              <Card className="shadow-sm">
+                <CardContent className="p-6 md:p-8 space-y-5">
+                  <div>
+                    <h3 className="text-lg font-bold mb-1">Property Documents</h3>
+                    <p className="text-sm text-muted-foreground">Upload legal documents to support verification — title deeds, survey plans, certificates of occupancy, etc.</p>
+                  </div>
+
+                  <input
+                    ref={docFileInputRef}
+                    type="file"
+                    accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                    multiple
+                    className="hidden"
+                    onChange={e => e.target.files && handleDocumentUpload(e.target.files)}
+                  />
+
+                  {uploadedDocuments.length > 0 && (
+                    <div className="space-y-2">
+                      {uploadedDocuments.map((doc, i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 border rounded-lg bg-muted/20">
+                          <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                          <span className="text-sm font-medium flex-1 truncate">{doc.name}</span>
+                          <a href={doc.url} target="_blank" rel="noopener noreferrer" className="text-xs text-primary font-semibold hover:underline flex-shrink-0">View</a>
+                          <button
+                            type="button"
+                            onClick={() => setUploadedDocuments(prev => prev.filter((_, idx) => idx !== i))}
+                            className="text-muted-foreground hover:text-destructive transition-colors flex-shrink-0"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => docFileInputRef.current?.click()}
+                    disabled={uploadingDocs}
+                    className="w-full border-2 border-dashed border-border rounded-xl p-8 flex flex-col items-center gap-3 hover:border-primary/50 hover:bg-muted/30 transition-colors disabled:opacity-60 cursor-pointer"
+                  >
+                    {uploadingDocs ? (
+                      <Loader2 className="w-8 h-8 text-muted-foreground animate-spin" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                        <FileText className="w-5 h-5 text-muted-foreground" />
+                      </div>
+                    )}
+                    <div className="text-center">
+                      <p className="text-sm font-semibold">{uploadingDocs ? "Uploading documents…" : "Click to add documents"}</p>
+                      <p className="text-xs text-muted-foreground mt-1">PDF, DOC, JPG — up to 20 MB each</p>
+                    </div>
+                  </button>
+                </CardContent>
+              </Card>
+
               {/* Pricing */}
               <Card className="shadow-sm">
                 <CardContent className="p-6 md:p-8 space-y-4">
@@ -479,11 +568,11 @@ export default function CreateListing() {
               <Button
                 type="submit"
                 className="font-bold px-8 h-11"
-                disabled={createListing.isPending || uploading}
+                disabled={createListing.isPending || uploading || uploadingDocs}
               >
                 {createListing.isPending ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating…</>
-                ) : uploading ? (
+                ) : uploading || uploadingDocs ? (
                   <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Uploading…</>
                 ) : "Create Listing"}
               </Button>

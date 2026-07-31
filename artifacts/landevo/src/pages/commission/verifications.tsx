@@ -64,13 +64,13 @@ export default function CommissionVerifications() {
   const selectedVerif = verifications.find((v) => v.id === selected);
 
   async function handleApprove(id: number) {
-    await approve.mutateAsync({ verificationId: id, data: { notes: "Approved by officer" } });
+    await approve.mutateAsync({ verificationId: id, data: { notes: "Approved by commission admin" } });
     refetch();
     setSelected(null);
   }
 
   async function handleReject(id: number) {
-    await reject.mutateAsync({ verificationId: id, data: { notes: "Rejected by officer" } });
+    await reject.mutateAsync({ verificationId: id, data: { notes: "Rejected by commission admin" } });
     refetch();
     setSelected(null);
   }
@@ -134,7 +134,6 @@ export default function CommissionVerifications() {
                     <TableRow className="bg-muted/20">
                       <TableHead className="text-[11px] font-bold tracking-wider text-muted-foreground pl-5">LISTING</TableHead>
                       <TableHead className="text-[11px] font-bold tracking-wider text-muted-foreground">AGENT</TableHead>
-                      <TableHead className="text-[11px] font-bold tracking-wider text-muted-foreground">OFFICER</TableHead>
                       <TableHead className="text-[11px] font-bold tracking-wider text-muted-foreground">SUBMITTED</TableHead>
                       <TableHead className="text-[11px] font-bold tracking-wider text-muted-foreground">STATUS</TableHead>
                       <TableHead className="text-[11px] font-bold tracking-wider text-muted-foreground text-right pr-5">ACTIONS</TableHead>
@@ -163,7 +162,6 @@ export default function CommissionVerifications() {
                             </div>
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">{v.agentName}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">{v.officerName ?? <span className="italic text-muted-foreground/50">Unassigned</span>}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{fmt(v.submittedAt)}</TableCell>
                           <TableCell>
                             <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full ${cfg.bg}`}>
@@ -216,8 +214,7 @@ export default function CommissionVerifications() {
                   <div className="space-y-3 text-sm">
                     {[
                       ["Agent",     selectedVerif.agentName],
-                      ["Officer",   selectedVerif.officerName ?? "Unassigned"],
-                      ["Status",    selectedVerif.uiStatus],
+                       ["Status",    selectedVerif.uiStatus],
                       ["Submitted", fmt(selectedVerif.submittedAt)],
                       ["Reviewed",  fmt(selectedVerif.reviewedAt)],
                       ["Notes",     selectedVerif.notes ?? "—"],

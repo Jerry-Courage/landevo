@@ -79,6 +79,12 @@ export const ListingStatus = {
   sold: 'sold',
 } as const;
 
+export interface ListingDocument {
+  name: string;
+  url: string;
+  contentType: string;
+}
+
 export interface Listing {
   id: number;
   agentId: number;
@@ -98,6 +104,7 @@ export interface Listing {
   propertyType: ListingPropertyType;
   status: ListingStatus;
   images: string[];
+  documents?: ListingDocument[];
   /** @nullable */
   verificationId?: number | null;
   createdAt: string;
@@ -133,6 +140,7 @@ export interface ListingInput {
   bathrooms?: number;
   propertyType: ListingInputPropertyType;
   images?: string[];
+  documents?: ListingDocument[];
 }
 
 export type ListingUpdatePropertyType = typeof ListingUpdatePropertyType[keyof typeof ListingUpdatePropertyType];
@@ -160,6 +168,7 @@ export interface ListingUpdate {
   bathrooms?: number;
   propertyType?: ListingUpdatePropertyType;
   images?: string[];
+  documents?: ListingDocument[];
 }
 
 export type VerificationStatus = typeof VerificationStatus[keyof typeof VerificationStatus];
@@ -383,6 +392,36 @@ export interface AdminDashboard {
   totalTransactions: number;
   completedTransactions: number;
   pendingVerifications: number;
+}
+
+export interface UploadUrlRequest {
+  /**
+     * Original file name.
+     * @minLength 1
+     */
+  name: string;
+  /**
+     * File size in bytes.
+     * @minimum 1
+     */
+  size: number;
+  /**
+     * MIME type of the file (e.g. `image/jpeg`).
+     * @minLength 1
+     */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  /** Presigned GCS URL for PUT upload. */
+  uploadURL: string;
+  /** Normalized object path (e.g. `/objects/uploads/uuid`). Store this in your database. */
+  objectPath: string;
+  metadata?: UploadUrlRequest;
+}
+
+export interface ErrorEnvelope {
+  error: string;
 }
 
 export type ListListingsParams = {

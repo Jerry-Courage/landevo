@@ -5,6 +5,7 @@
  * Landevo Real Estate Marketplace API
  * OpenAPI spec version: 0.2.0
  */
+import type { ListingDocument } from './listingDocument';
 import type { ListingInputPropertyType } from './listingInputPropertyType';
 
 export interface ListingInput {
@@ -26,4 +27,5 @@ export interface ListingInput {
   bathrooms?: number;
   propertyType: ListingInputPropertyType;
   images?: string[];
+  documents?: ListingDocument[];
 }

@@ -40,6 +40,7 @@ router.get("/listings", requireRole("commission_admin"), async (req, res) => {
       notes:          verificationsTable.notes,
       submittedAt:    verificationsTable.submittedAt,
       reviewedAt:     verificationsTable.reviewedAt,
+      documents:      listingsTable.documents,
     })
     .from(verificationsTable)
     .innerJoin(listingsTable, eq(verificationsTable.listingId, listingsTable.id))
@@ -60,6 +61,7 @@ router.get("/listings", requireRole("commission_admin"), async (req, res) => {
     submitted: r.submittedAt ? new Date(r.submittedAt).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" }) : "—",
     status: auditStatus(r.status),
     notes: r.notes ?? "",
+    documents: (r.documents as { name: string; url: string; contentType: string }[] | null) ?? [],
   }));
 
   return res.json(mapped);
@@ -100,7 +102,7 @@ router.get("/officers", requireRole("commission_admin"), async (req, res) => {
     id:          `OFF-${String(o.id).padStart(3, "0")}`,
     name:        o.name,
     email:       o.email,
-    role:        "Commission Officer",
+    role:        "Commission Admin",
     state:       "—",
     assignments: o.assignments,
     reviews:     o.reviews,

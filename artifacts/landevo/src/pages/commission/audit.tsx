@@ -59,7 +59,7 @@ export default function CommissionAudit() {
           <div>
             <p className="text-xs font-bold text-muted-foreground tracking-widest mb-1">TRANSPARENCY & ACCOUNTABILITY</p>
             <h1 className="text-2xl font-bold tracking-tight">Activity Log</h1>
-            <p className="text-muted-foreground mt-1 text-sm">Complete record of all commission officer actions across agents and listings.</p>
+            <p className="text-muted-foreground mt-1 text-sm">Complete record of all commission admin actions across agents and listings.</p>
           </div>
           <Button variant="outline" className="bg-white font-semibold h-9">
             <Download className="w-4 h-4 mr-2" /> Export Log
@@ -69,7 +69,7 @@ export default function CommissionAudit() {
         <div className="flex items-center gap-3 flex-wrap">
           <div className="relative w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input placeholder="Search officer, action, target..." className="pl-9 h-9 bg-white text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+            <Input placeholder="Search admin, action, target..." className="pl-9 h-9 bg-white text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
           <div className="flex border border-border rounded-lg bg-white overflow-hidden">
             {tabs.map((tab) => (
@@ -91,7 +91,7 @@ export default function CommissionAudit() {
               {!loading && filtered.length === 0 && (
                 <div className="py-16 flex flex-col items-center gap-3 text-muted-foreground">
                   <Filter className="w-10 h-10 opacity-20" />
-                  <p className="text-sm font-medium">{log.length === 0 ? "No officer activity recorded yet" : "No entries match this filter"}</p>
+                  <p className="text-sm font-medium">{log.length === 0 ? "No admin activity recorded yet" : "No entries match this filter"}</p>
                 </div>
               )}
               {!loading && filtered.map((item) => {

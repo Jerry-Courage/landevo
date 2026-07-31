@@ -44,6 +44,7 @@ export const listingsTable = pgTable("listings", {
   propertyType: propertyTypeEnum("property_type").notNull(),
   status: listingStatusEnum("status").notNull().default("draft"),
   images: json("images").$type<string[]>().notNull().default([]),
+  documents: json("documents").$type<{ name: string; url: string; contentType: string }[]>().notNull().default([]),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

@@ -113,6 +113,11 @@ export const ListListingsResponseItem = zod.object({
   "propertyType": zod.enum(['land', 'residential', 'commercial', 'apartment']),
   "status": zod.enum(['draft', 'pending_verification', 'verified', 'active', 'under_offer', 'sold']),
   "images": zod.array(zod.string()),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string()
+})).optional(),
   "verificationId": zod.int().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -149,7 +154,12 @@ export const CreateListingBody = zod.object({
   "bedrooms": zod.int().min(createListingBodyBedroomsMin).optional(),
   "bathrooms": zod.int().min(createListingBodyBathroomsMin).optional(),
   "propertyType": zod.enum(['land', 'residential', 'commercial', 'apartment']),
-  "images": zod.array(zod.string()).optional()
+  "images": zod.array(zod.string()).optional(),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string()
+})).optional()
 })
 
 export const CreateListingResponse = zod.object({
@@ -169,6 +179,11 @@ export const CreateListingResponse = zod.object({
   "propertyType": zod.enum(['land', 'residential', 'commercial', 'apartment']),
   "status": zod.enum(['draft', 'pending_verification', 'verified', 'active', 'under_offer', 'sold']),
   "images": zod.array(zod.string()),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string()
+})).optional(),
   "verificationId": zod.int().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -199,6 +214,11 @@ export const GetListingResponse = zod.object({
   "propertyType": zod.enum(['land', 'residential', 'commercial', 'apartment']),
   "status": zod.enum(['draft', 'pending_verification', 'verified', 'active', 'under_offer', 'sold']),
   "images": zod.array(zod.string()),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string()
+})).optional(),
   "verificationId": zod.int().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -230,7 +250,12 @@ export const UpdateListingBody = zod.object({
   "bedrooms": zod.int().optional(),
   "bathrooms": zod.int().optional(),
   "propertyType": zod.enum(['land', 'residential', 'commercial', 'apartment']).optional(),
-  "images": zod.array(zod.string()).optional()
+  "images": zod.array(zod.string()).optional(),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string()
+})).optional()
 })
 
 export const UpdateListingResponse = zod.object({
@@ -250,6 +275,11 @@ export const UpdateListingResponse = zod.object({
   "propertyType": zod.enum(['land', 'residential', 'commercial', 'apartment']),
   "status": zod.enum(['draft', 'pending_verification', 'verified', 'active', 'under_offer', 'sold']),
   "images": zod.array(zod.string()),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string()
+})).optional(),
   "verificationId": zod.int().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -292,6 +322,11 @@ export const SubmitListingForVerificationResponse = zod.object({
   "propertyType": zod.enum(['land', 'residential', 'commercial', 'apartment']),
   "status": zod.enum(['draft', 'pending_verification', 'verified', 'active', 'under_offer', 'sold']),
   "images": zod.array(zod.string()),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string()
+})).optional(),
   "verificationId": zod.int().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -829,6 +864,11 @@ export const GetBuyerDashboardResponse = zod.object({
   "propertyType": zod.enum(['land', 'residential', 'commercial', 'apartment']),
   "status": zod.enum(['draft', 'pending_verification', 'verified', 'active', 'under_offer', 'sold']),
   "images": zod.array(zod.string()),
+  "documents": zod.array(zod.object({
+  "name": zod.string(),
+  "url": zod.string(),
+  "contentType": zod.string()
+})).optional(),
   "verificationId": zod.int().nullish(),
   "createdAt": zod.coerce.date(),
   "updatedAt": zod.coerce.date()
@@ -885,26 +925,34 @@ export const GetAdminDashboardResponse = zod.object({
   "pendingVerifications": zod.int()
 })
 
-/**
- * @summary Request presigned upload URL body (UploadUrlRequest schema)
- */
-export const RequestUploadUrlBody = zod.object({
-  "name": zod.string().min(1),
-  "size": zod.number().int().min(1),
-  "contentType": zod.string().min(1),
-})
 
 /**
- * @summary Presigned upload URL response (UploadUrlResponse schema)
+ * @summary Request a presigned URL for file upload
  */
+
+
+
+
+
+export const RequestUploadUrlBody = zod.object({
+  "name": zod.string().min(1).describe('Original file name.'),
+  "size": zod.int().min(1).describe('File size in bytes.'),
+  "contentType": zod.string().min(1).describe('MIME type of the file (e.g. `image\/jpeg`).')
+})
+
+
+
+
+
+
 export const RequestUploadUrlResponse = zod.object({
-  "uploadURL": zod.string().url(),
-  "objectPath": zod.string(),
+  "uploadURL": zod.url().describe('Presigned GCS URL for PUT upload.'),
+  "objectPath": zod.string().describe('Normalized object path (e.g. `\/objects\/uploads\/uuid`). Store this in your database.'),
   "metadata": zod.object({
-    "name": zod.string().min(1),
-    "size": zod.number().int().min(1),
-    "contentType": zod.string().min(1),
-  }).optional(),
+  "name": zod.string().min(1).describe('Original file name.'),
+  "size": zod.int().min(1).describe('File size in bytes.'),
+  "contentType": zod.string().min(1).describe('MIME type of the file (e.g. `image\/jpeg`).')
+}).optional()
 })
 
 

@@ -5,6 +5,7 @@
  * Landevo Real Estate Marketplace API
  * OpenAPI spec version: 0.2.0
  */
+import type { ListingDocument } from './listingDocument';
 import type { ListingPropertyType } from './listingPropertyType';
 import type { ListingStatus } from './listingStatus';
 
@@ -27,6 +28,7 @@ export interface Listing {
   propertyType: ListingPropertyType;
   status: ListingStatus;
   images: string[];
+  documents?: ListingDocument[];
   /** @nullable */
   verificationId?: number | null;
   createdAt: Date;

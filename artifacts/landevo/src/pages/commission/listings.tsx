@@ -5,11 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Building2, Search, Download, CheckCircle2, XCircle, Clock, Eye, AlertTriangle, MapPin } from "lucide-react";
+import { Building2, Search, Download, CheckCircle2, XCircle, Clock, Eye, AlertTriangle, MapPin, FileText, ExternalLink } from "lucide-react";
 import { motion } from "framer-motion";
 
 type AuditStatus = "All" | "Awaiting Audit" | "Under Review" | "Approved" | "Correction Required";
 type FilterStatus = Exclude<AuditStatus, "All">;
+
+interface ListingDoc {
+  name: string;
+  url: string;
+  contentType: string;
+}
 
 interface AuditListing {
   id: string;
@@ -25,6 +31,7 @@ interface AuditListing {
   submitted: string;
   status: string;
   notes: string;
+  documents?: ListingDoc[];
 }
 
 const statusConfig: Record<string, { bg: string; label: string; icon: React.ElementType }> = {
@@ -66,7 +73,7 @@ export default function CommissionListings() {
       await fetch(`/api/verifications/${verificationId}/approve`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes: "Approved by commission officer" }),
+        body: JSON.stringify({ notes: "Approved by commission admin" }),
       });
       await fetchListings();
       setSelected(null);
@@ -79,7 +86,7 @@ export default function CommissionListings() {
       await fetch(`/api/verifications/${verificationId}/reject`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ notes: "Flagged for correction by commission officer" }),
+        body: JSON.stringify({ notes: "Flagged for correction by commission admin" }),
       });
       await fetchListings();
       setSelected(null);
@@ -255,9 +262,24 @@ export default function CommissionListings() {
                       </div>
                     ))}
                   </div>
+                  {selectedListing.documents && selectedListing.documents.length > 0 && (
+                    <div className="border-t pt-3">
+                      <p className="text-[11px] font-bold text-muted-foreground tracking-wider mb-2">PROPERTY DOCUMENTS</p>
+                      <div className="space-y-1.5">
+                        {selectedListing.documents.map((doc, i) => (
+                          <a key={i} href={doc.url} target="_blank" rel="noopener noreferrer"
+                            className="flex items-center gap-2 p-2 rounded-md bg-muted/30 hover:bg-muted/60 transition-colors group">
+                            <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                            <span className="text-xs font-medium flex-1 truncate">{doc.name}</span>
+                            <ExternalLink className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   {selectedListing.notes && (
                     <div className="border-t pt-3">
-                      <p className="text-[11px] font-bold text-muted-foreground tracking-wider mb-2">OFFICER NOTES</p>
+                      <p className="text-[11px] font-bold text-muted-foreground tracking-wider mb-2">ADMIN NOTES</p>
                       <p className="text-xs text-foreground leading-relaxed bg-muted/30 rounded-md p-3">{selectedListing.notes}</p>
                     </div>
                   )}

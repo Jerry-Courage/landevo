@@ -49,7 +49,7 @@ export default function CommissionDashboard() {
             <p className="text-xs font-bold text-muted-foreground tracking-widest mb-1">LAND COMMISSION PORTAL</p>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Commission Dashboard</h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Welcome, {user?.name?.split(" ")[0] ?? "Officer"}. {totalPending} verification{totalPending !== 1 ? "s" : ""} require{totalPending === 1 ? "s" : ""} your attention.
+              Welcome, {user?.name?.split(" ")[0] ?? "Admin"}. {totalPending} verification{totalPending !== 1 ? "s" : ""} require{totalPending === 1 ? "s" : ""} your attention.
             </p>
           </div>
           <div className="flex gap-3">
@@ -122,8 +122,8 @@ export default function CommissionDashboard() {
               <Link href="/commission/audit">
                 <Button variant="outline" className="w-full justify-start font-semibold text-muted-foreground">Activity Log</Button>
               </Link>
-              <Link href="/commission/officers">
-                <Button variant="outline" className="w-full justify-start font-semibold text-muted-foreground">Manage Officers</Button>
+              <Link href="/commission/listings">
+                <Button variant="outline" className="w-full justify-start font-semibold text-muted-foreground">Listing Audits</Button>
               </Link>
             </CardContent>
           </Card>

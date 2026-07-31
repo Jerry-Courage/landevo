@@ -25,6 +25,7 @@ function listingSelect() {
     propertyType: listingsTable.propertyType,
     status: listingsTable.status,
     images: listingsTable.images,
+    documents: listingsTable.documents,
     verificationId: sql<number | null>`(
       SELECT id FROM verifications WHERE listing_id = ${listingsTable.id}
       ORDER BY created_at DESC LIMIT 1
@@ -105,7 +106,7 @@ router.get("/", requireAuth, async (req, res) => {
 
 // POST /api/listings
 router.post("/", requireRole("agent"), async (req, res) => {
-  const { title, description, price, location, address, city, state, areaSqm, bedrooms, bathrooms, propertyType, images } = req.body;
+  const { title, description, price, location, address, city, state, areaSqm, bedrooms, bathrooms, propertyType, images, documents } = req.body;
 
   if (!title || !description || !price || !location || !address || !city || !state || !areaSqm || !propertyType) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -127,6 +128,7 @@ router.post("/", requireRole("agent"), async (req, res) => {
       bathrooms: bathrooms ?? null,
       propertyType,
       images: images ?? [],
+      documents: documents ?? [],
     })
     .returning({ id: listingsTable.id });
 
@@ -168,7 +170,7 @@ router.patch("/:id", requireRole("agent"), async (req, res) => {
   if (!existing) return res.status(404).json({ error: "Listing not found" });
   if (existing.agentId !== req.session.userId) return res.status(403).json({ error: "Not your listing" });
 
-  const { title, description, price, location, address, city, state, areaSqm, bedrooms, bathrooms, propertyType, images } = req.body;
+  const { title, description, price, location, address, city, state, areaSqm, bedrooms, bathrooms, propertyType, images, documents } = req.body;
 
   const updates: Record<string, unknown> = { updatedAt: new Date() };
   if (title !== undefined) updates.title = title;
@@ -183,6 +185,7 @@ router.patch("/:id", requireRole("agent"), async (req, res) => {
   if (bathrooms !== undefined) updates.bathrooms = bathrooms;
   if (propertyType !== undefined) updates.propertyType = propertyType;
   if (images !== undefined) updates.images = images;
+  if (documents !== undefined) updates.documents = documents;
 
   await db.update(listingsTable).set(updates).where(eq(listingsTable.id, id));
 

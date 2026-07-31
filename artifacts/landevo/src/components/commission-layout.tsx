@@ -2,18 +2,16 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import {
   Shield, LayoutDashboard, ShieldCheck, Building2,
-  FileText, Users, Settings, LogOut, Bell, Menu
+  FileText, LogOut, Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 
 const NAV_ITEMS = [
   { path: "/commission", label: "Dashboard", icon: LayoutDashboard, exact: true },
-  { path: "/commission/verifications", label: "Agent Verifications", icon: ShieldCheck, badge: 47 },
-  { path: "/commission/listings", label: "Listing Audits", icon: Building2, badge: 23 },
+  { path: "/commission/verifications", label: "Agent Verifications", icon: ShieldCheck },
+  { path: "/commission/listings", label: "Listing Audits", icon: Building2 },
   { path: "/commission/audit", label: "Activity Log", icon: FileText },
-  { path: "/commission/officers", label: "Officers", icon: Users },
-  { path: "/commission/settings", label: "Settings", icon: Settings },
 ];
 
 export default function CommissionLayout({ children }: { children: React.ReactNode }) {
@@ -36,7 +34,7 @@ export default function CommissionLayout({ children }: { children: React.ReactNo
           </div>
           <div className="flex flex-col">
             <span className="font-bold text-sm leading-tight text-white">Land Commission</span>
-            <span className="text-[10px] text-emerald-300/80 font-semibold tracking-wider">OFFICER PORTAL</span>
+            <span className="text-[10px] text-emerald-300/80 font-semibold tracking-wider">ADMIN PORTAL</span>
           </div>
         </div>
 
@@ -82,9 +80,9 @@ export default function CommissionLayout({ children }: { children: React.ReactNo
             </div>
             <div className="flex flex-col min-w-0">
               <span className="text-sm font-semibold text-white leading-none mb-1 truncate">
-                {user?.name ?? "Officer"}
+                {user?.name ?? "Admin"}
               </span>
-              <span className="text-[10px] text-emerald-300/70 leading-none">Commission Officer</span>
+              <span className="text-[10px] text-emerald-300/70 leading-none">Commission Admin</span>
             </div>
           </div>
           <button

@@ -111,44 +111,6 @@ router.get("/:id", requireAuth, async (req, res) => {
   return res.json(v);
 });
 
-// PATCH /api/verifications/:id/assign
-router.patch("/:id/assign", requireRole("commission_admin"), async (req, res) => {
-  const id = parseInt(String(req.params.id));
-  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
-
-  const { officerId } = req.body as { officerId?: number };
-  if (!officerId) return res.status(400).json({ error: "officerId is required" });
-
-  // Validate that the target is a real commission_admin
-  const [officer] = await db
-    .select({ id: usersTable.id, role: usersTable.role })
-    .from(usersTable)
-    .where(eq(usersTable.id, officerId));
-  if (!officer) return res.status(404).json({ error: "Officer not found" });
-  if (officer.role !== "commission_admin") {
-    return res.status(400).json({ error: "Assigned user must be a commission_admin" });
-  }
-
-  const [v] = await db
-    .select({ id: verificationsTable.id, status: verificationsTable.status })
-    .from(verificationsTable)
-    .where(eq(verificationsTable.id, id));
-
-  if (!v) return res.status(404).json({ error: "Verification not found" });
-
-  if (!["pending", "in_review"].includes(v.status)) {
-    return res.status(400).json({ error: "Verification has already been resolved" });
-  }
-
-  await db
-    .update(verificationsTable)
-    .set({ officerId, status: "in_review" })
-    .where(eq(verificationsTable.id, id));
-
-  const updated = await getVerification(id);
-  return res.json(updated);
-});
-
 // PATCH /api/verifications/:id/approve
 router.patch("/:id/approve", requireRole("commission_admin"), async (req, res) => {
   const id = parseInt(String(req.params.id));
@@ -172,7 +134,7 @@ router.patch("/:id/approve", requireRole("commission_admin"), async (req, res) =
 
   await db
     .update(verificationsTable)
-    .set({ status: "approved", notes: notes ?? null, reviewedAt: new Date() })
+    .set({ status: "approved", officerId: req.session.userId!, notes: notes ?? null, reviewedAt: new Date() })
     .where(eq(verificationsTable.id, id));
 
   // Update listing status to active
@@ -225,7 +187,7 @@ router.patch("/:id/reject", requireRole("commission_admin"), async (req, res) =>
 
   await db
     .update(verificationsTable)
-    .set({ status: "rejected", notes: notes ?? null, reviewedAt: new Date() })
+    .set({ status: "rejected", officerId: req.session.userId!, notes: notes ?? null, reviewedAt: new Date() })
     .where(eq(verificationsTable.id, id));
 
   // Revert listing to draft
