@@ -1,50 +1,65 @@
 # Landevo
 
-A secure land transaction marketplace connecting verified agents, government commissions, and buyers through an immutable digital escrow system.
+A full-stack real estate marketplace platform for secure land transactions. It connects verified agents, government commission officers, and buyers through a multi-role workflow with escrow-based transactions and official listing verification.
 
-## Stack
+## Architecture
 
-- **Frontend**: React 19 + Vite + Tailwind CSS 4 + shadcn/ui + Wouter + React Query (`artifacts/landevo/`)
-- **Backend**: Express 5 API server with session auth (`artifacts/api-server/`)
+- **Frontend**: React + Vite + Tailwind CSS + shadcn/ui (`artifacts/landevo/`)
+- **Backend**: Express API server (`artifacts/api-server/`)
 - **Database**: PostgreSQL via Drizzle ORM (`lib/db/`)
-- **File storage**: Cloudinary (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`)
-- **API contract**: OpenAPI spec → Orval codegen → Zod schemas + React Query hooks (`lib/api-spec/`, `lib/api-zod/`, `lib/api-client-react/`)
+- **API contract**: OpenAPI spec + Orval codegen (`lib/api-spec/openapi.yaml`)
+- **Generated clients**: React Query hooks (`lib/api-client-react/`) and Zod schemas (`lib/api-zod/`)
 
-## Running the app
+## User Roles
 
-Two workflows run the app:
+| Role | Description |
+|------|-------------|
+| `agent` | Lists and manages property listings, submits for verification |
+| `buyer` | Browses verified listings, makes offers, tracks transactions |
+| `commission_admin` | Reviews and approves listing verifications |
+| `system_admin` | Full platform oversight and management |
 
-| Workflow | Command | Port |
-|---|---|---|
-| `API Server` | `PORT=8080 pnpm --filter @workspace/api-server run dev` | 8080 |
-| `artifacts/landevo: web` | `pnpm --filter @workspace/landevo run dev` | 21072 |
+## How to Run
 
-The frontend proxies `/api` requests to the API server at port 8080.
+Both services start automatically:
 
-## Key commands
+- **Frontend** (`artifacts/landevo: web`): Runs on `$PORT` (assigned by Replit, default 21072)
+- **API Server** (`API Server`): Runs on port 8080 via `PORT=8080 pnpm --filter @workspace/api-server run dev`
+
+The API server builds with esbuild before starting (`pnpm run build && pnpm run start`).
+
+## Key Commands
 
 ```bash
-# Install dependencies
+# Install all workspace dependencies
 pnpm install
+
+# Re-run codegen after OpenAPI spec changes
+pnpm --filter @workspace/api-spec run codegen
 
 # Push DB schema changes
 pnpm --filter @workspace/db run push
 
-# Seed demo data
-pnpm --filter @workspace/db run seed
+# Type-check libs
+pnpm run typecheck:libs
 
-# Regenerate API client after spec changes
-pnpm --filter @workspace/api-spec run codegen
+# Seed the database
+pnpm --filter @workspace/db run seed
 ```
 
-## Required secrets
+## Environment Variables / Secrets
 
-- `SESSION_SECRET` — express-session secret (set)
-- `DATABASE_URL` — auto-provisioned by Replit
-- `CLOUDINARY_CLOUD_NAME` — Cloudinary cloud name (set)
-- `CLOUDINARY_API_KEY` — Cloudinary API key (set)
-- `CLOUDINARY_API_SECRET` — Cloudinary API secret (set)
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `SESSION_SECRET` | Yes | Express session secret |
+| `DATABASE_URL` | Yes | Postgres connection string (auto-provided by Replit) |
 
-## User preferences
+## Notes
 
-- Keep the project's existing structure and stack
+- The API server's `node_modules` are isolated — run `pnpm --filter @workspace/api-server install` if esbuild or other devDeps go missing
+- After any change to `lib/api-spec/openapi.yaml`, always re-run codegen before touching frontend or backend code that depends on generated types
+- Session cookies use `secure: false` — TLS is terminated at the Replit proxy layer
+
+## User Preferences
+
+<!-- Add user preferences here as they are expressed -->

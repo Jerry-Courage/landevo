@@ -1,6 +1,7 @@
 kind = "web"
 previewPath = "/"
 title = "Landevo"
+description = "A full-stack marketplace platform for land listings, offers, transactions, messaging, and admin management. Users can browse listings, make offers, track transactions, and communicate with other parties."
 version = "1.0.0"
 id = "artifacts/landevo"
 router = "path"
