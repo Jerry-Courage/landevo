@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { sseManager } from "../lib/sse";
 import {
   db,
   offersTable,
@@ -112,6 +113,8 @@ router.post("/listings/:listingId/offers", requireRole("buyer"), async (req, res
     body: `${buyer?.name ?? "A buyer"} made an offer of ${amount} on "${listing.title}".`,
     relatedId: inserted.id,
   });
+  sseManager.sendToUser(listing.agentId, { type: "notification", payload: null });
+  sseManager.sendToUser(listing.agentId, { type: "offer_updated", payload: { listingId, status: "pending" } });
 
   const [offer] = await db
     .select(offerSelect())
@@ -223,6 +226,8 @@ router.patch("/offers/:id/accept", requireRole("agent"), async (req, res) => {
     body: `Your offer on "${listing.title}" has been accepted. Escrow ref: ${escrowRef}`,
     relatedId: offer.listingId,
   });
+  sseManager.sendToUser(offer.buyerId, { type: "offer_updated", payload: { offerId: id, status: "accepted" } });
+  sseManager.sendToUser(offer.buyerId, { type: "notification", payload: null });
 
   const [updated] = await db
     .select(offerSelect())
@@ -270,6 +275,8 @@ router.patch("/offers/:id/reject", requireRole("agent"), async (req, res) => {
     body: `Your offer on "${listing.title}" was not accepted.`,
     relatedId: offer.listingId,
   });
+  sseManager.sendToUser(offer.buyerId, { type: "offer_updated", payload: { offerId: id, status: "rejected" } });
+  sseManager.sendToUser(offer.buyerId, { type: "notification", payload: null });
 
   const [updated] = await db
     .select(offerSelect())

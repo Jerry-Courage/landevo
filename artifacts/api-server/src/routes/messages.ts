@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { sseManager } from "../lib/sse";
 import {
   db,
   messageThreadsTable,
@@ -333,6 +334,8 @@ router.post("/threads/:threadId/messages", requireAuth, async (req, res) => {
       body: content.slice(0, 100),
       relatedId: threadId,
     });
+    sseManager.sendToUser(other.userId, { type: "message_sent", payload: { threadId, senderId: userId } });
+    sseManager.sendToUser(other.userId, { type: "notification", payload: null });
   }
 
   const [full] = await db

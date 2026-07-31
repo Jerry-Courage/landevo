@@ -9,6 +9,8 @@ import messagesRouter from "./messages";
 import notificationsRouter from "./notifications";
 import dashboardRouter from "./dashboard";
 import adminRouter from "./admin";
+import storageRouter from "./storage";
+import eventsRouter from "./events";
 
 const router: IRouter = Router();
 
@@ -22,5 +24,7 @@ router.use("/", messagesRouter);             // /threads and /threads/:id/messag
 router.use("/notifications", notificationsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/admin", adminRouter);
+router.use("/", storageRouter);              // /storage/uploads/request-url, /storage/objects/*, /storage/public-objects/*
+router.use("/", eventsRouter);               // /events (SSE)
 
 export default router;

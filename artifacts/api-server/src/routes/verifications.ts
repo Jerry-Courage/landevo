@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { sseManager } from "../lib/sse";
 import {
   db,
   verificationsTable,
@@ -193,6 +194,8 @@ router.patch("/:id/approve", requireRole("commission_admin"), async (req, res) =
       body: `Your listing "${listing.title}" has been verified and is now active.`,
       relatedId: v.listingId,
     });
+    sseManager.sendToUser(listing.agentId, { type: "notification", payload: null });
+    sseManager.sendToUser(listing.agentId, { type: "verification_updated", payload: { verificationId: id, status: "approved" } });
   }
 
   const updated = await getVerification(id);
@@ -244,6 +247,8 @@ router.patch("/:id/reject", requireRole("commission_admin"), async (req, res) =>
       body: `Your listing "${listing.title}" was not approved.${notes ? ` Reason: ${notes}` : ""}`,
       relatedId: v.listingId,
     });
+    sseManager.sendToUser(listing.agentId, { type: "notification", payload: null });
+    sseManager.sendToUser(listing.agentId, { type: "verification_updated", payload: { verificationId: id, status: "rejected" } });
   }
 
   const updated = await getVerification(id);

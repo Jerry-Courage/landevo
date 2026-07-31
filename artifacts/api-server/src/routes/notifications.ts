@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { sseManager } from "../lib/sse";
 import { db, notificationsTable } from "@workspace/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { requireAuth } from "../middleware/require-auth";
@@ -50,6 +51,9 @@ router.patch("/:id/read", requireAuth, async (req, res) => {
     .select()
     .from(notificationsTable)
     .where(eq(notificationsTable.id, id));
+
+  // Push refreshed notification state to client
+  sseManager.sendToUser(req.session.userId!, { type: "notification", payload: null });
 
   return res.json(updated);
 });
