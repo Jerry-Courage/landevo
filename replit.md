@@ -55,12 +55,10 @@ To re-seed demo data:
 pnpm --filter @workspace/db run seed
 ```
 
-## External services (not yet configured)
+## External services
 
-- **Google Cloud Storage** — file uploads use GCS presigned URLs; requires `GOOGLE_APPLICATION_CREDENTIALS` or equivalent
-- **Cloudinary** — referenced in storage routes; requires `CLOUDINARY_*` env vars
-
-The app runs without these — upload flows will return errors but all other features work.
+- **Cloudinary** — used for file storage and uploads. Credentials are stored as Replit Secrets (`CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`).
+- **Google Cloud Storage** — also referenced in storage routes; optional alternative to Cloudinary. Requires `GOOGLE_APPLICATION_CREDENTIALS` if used.
 
 ## User preferences
 
