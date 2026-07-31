@@ -1,66 +1,65 @@
 # Landevo — Real Estate Marketplace
 
-A full-stack real estate marketplace connecting verified agents, government commissions, and buyers through a digital escrow system.
+A full-stack Nigerian real estate marketplace platform connecting property agents, buyers, and commission officers.
 
 ## Stack
 
-- **Frontend**: React + Vite + TypeScript (`artifacts/landevo/`)
-- **Backend**: Express 5 + TypeScript (`artifacts/api-server/`)
-- **Database**: PostgreSQL via Drizzle ORM (`lib/db/`)
-- **API contract**: OpenAPI 3.1 spec + Orval codegen (`lib/api-spec/`, `lib/api-client-react/`, `lib/api-zod/`)
-- **Session storage**: PostgreSQL-backed sessions (`connect-pg-simple`)
-- **Object storage**: Google Cloud Storage (`@google-cloud/storage`)
+- **Frontend**: React 19 + Vite + Tailwind CSS (shadcn/ui components), served at `/`
+- **API server**: Express 5 + Pino logger, served at port `8080`, proxied under `/api`
+- **Database**: PostgreSQL (Replit built-in), schema managed by Drizzle ORM
+- **Auth**: Session-based (express-session + connect-pg-simple), bcrypt password hashing
 
-## Running the project
+## User Roles
 
-Both services start automatically via the **Project** workflow:
+| Role | Email (dev seed) | Password |
+|------|-----------------|----------|
+| Agent | agent@landevo.ng | password123 |
+| Buyer | buyer@landevo.ng | password123 |
+| Commission Admin | commission@landevo.ng | password123 |
+| System Admin | admin@landevo.ng | password123 |
 
-| Service | Port | Command |
-|---|---|---|
-| API Server | 8080 | `PORT=8080 pnpm --filter @workspace/api-server run dev` |
-| Frontend | 21072 | `pnpm --filter @workspace/landevo run dev` |
+## How to Run
 
-The frontend proxies `/api/*` to the API server on port 8080.
+The **Project** workflow runs both services together:
 
-## User roles
+- `artifacts/landevo: web` — Vite dev server (port 21072, preview at `/`)
+- `API Server` — Express server (port 8080, accessed via `/api` proxy)
 
-| Role | Description |
-|---|---|
-| `agent` | Lists properties, manages offers and transactions |
-| `buyer` | Browses listings, makes offers, tracks escrow |
-| `commission_admin` | Reviews and approves listing verifications |
-| `system_admin` | Full platform oversight and user management |
-
-## Key directories
+## Project Structure
 
 ```
 artifacts/
-  api-server/       # Express API (routes, middleware, libs)
-  landevo/          # React frontend (pages, components, hooks)
+  api-server/      Express API (routes, middleware, libs)
+  landevo/         React frontend (pages, components, hooks)
 lib/
-  api-spec/         # openapi.yaml + Orval codegen config
-  api-client-react/ # Generated React Query hooks
-  api-zod/          # Generated Zod validation schemas
-  db/               # Drizzle schema + migrations
-  object-storage-web/ # Uppy-based file upload helpers
+  api-spec/        OpenAPI spec + Orval codegen config
+  api-client-react/ Generated React Query hooks
+  api-zod/         Generated Zod validation schemas
+  db/              Drizzle schema, migrations, seed script
 ```
 
-## After changing the OpenAPI spec
+## Database
 
-```bash
+Schema is pushed with:
+```
+pnpm --filter @workspace/db run push
+```
+
+Seed demo data with:
+```
+pnpm --filter @workspace/db run seed
+```
+
+After spec changes, regenerate types:
+```
 pnpm --filter @workspace/api-spec run codegen
 ```
 
-This regenerates `lib/api-client-react/src/generated/` and `lib/api-zod/src/generated/`.
+## Environment Variables
 
-## Required secrets
+- `DATABASE_URL` — auto-injected by Replit
+- `SESSION_SECRET` — set as a Replit Secret
 
-| Secret | Purpose |
-|---|---|
-| `SESSION_SECRET` | Express session signing |
+## User Preferences
 
-`DATABASE_URL` is runtime-managed by Replit — no manual setup needed.
-
-## User preferences
-
-- Keep the existing project structure and stack; no restructuring without explicit request.
+- Keep the project's existing structure and stack — do not restructure or migrate it.
