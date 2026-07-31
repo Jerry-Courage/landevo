@@ -164,6 +164,30 @@ router.patch("/:id/approve", requireRole("commission_admin"), async (req, res) =
   return res.json(updated);
 });
 
+// PATCH /api/verifications/:id/assign — take ownership (set to in_review)
+router.patch("/:id/assign", requireRole("commission_admin"), async (req, res) => {
+  const id = parseInt(String(req.params.id));
+  if (isNaN(id)) return res.status(400).json({ error: "Invalid ID" });
+
+  const [v] = await db
+    .select({ id: verificationsTable.id, status: verificationsTable.status })
+    .from(verificationsTable)
+    .where(eq(verificationsTable.id, id));
+
+  if (!v) return res.status(404).json({ error: "Verification not found" });
+  if (!["pending", "in_review"].includes(v.status)) {
+    return res.status(400).json({ error: "Verification is already resolved" });
+  }
+
+  await db
+    .update(verificationsTable)
+    .set({ status: "in_review", officerId: req.session.userId! })
+    .where(eq(verificationsTable.id, id));
+
+  const updated = await getVerification(id);
+  return res.json(updated);
+});
+
 // PATCH /api/verifications/:id/reject
 router.patch("/:id/reject", requireRole("commission_admin"), async (req, res) => {
   const id = parseInt(String(req.params.id));
