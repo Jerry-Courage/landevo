@@ -12,6 +12,7 @@ import adminRouter from "./admin";
 import commissionRouter from "./commission";
 import storageRouter from "./storage";
 import eventsRouter from "./events";
+import usersRouter from "./users";
 
 const router: IRouter = Router();
 
@@ -26,6 +27,7 @@ router.use("/notifications", notificationsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/admin", adminRouter);
 router.use("/commission", commissionRouter);
+router.use("/users", usersRouter);
 router.use("/", storageRouter);              // /storage/uploads/request-url, /storage/objects/*, /storage/public-objects/*
 router.use("/", eventsRouter);               // /events (SSE)
 

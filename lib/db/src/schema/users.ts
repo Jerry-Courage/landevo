@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, pgEnum, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, pgEnum, boolean, json } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -11,6 +11,7 @@ export const usersTable = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: userRoleEnum("role").notNull().default("buyer"),
   isActive: boolean("is_active").notNull().default(true),
+  notificationPreferences: json("notification_preferences").$type<Record<string, boolean>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

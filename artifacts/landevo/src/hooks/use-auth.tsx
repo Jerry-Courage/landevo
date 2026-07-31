@@ -15,22 +15,34 @@ type AuthContextType = {
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 const API = "/api";
 
+async function fetchMe(): Promise<AuthUser | null> {
+  const res = await fetch(`${API}/auth/me`, { credentials: "include" });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data?.user ?? null;
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch(`${API}/auth/me`, { credentials: "include" })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setUser(data?.user ?? null))
+    fetchMe()
+      .then(setUser)
       .catch(() => setUser(null))
       .finally(() => setLoading(false));
+  }, []);
+
+  const refreshUser = useCallback(async () => {
+    const fresh = await fetchMe().catch(() => null);
+    setUser(fresh);
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
@@ -66,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, register, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );
