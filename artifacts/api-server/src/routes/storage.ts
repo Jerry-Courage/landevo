@@ -1,105 +1,156 @@
 import { Readable } from 'stream';
-import multer from 'multer';
+import {
+  RequestUploadUrlBody,
+  RequestUploadUrlResponse,
+} from '@workspace/api-zod';
 import { Router, type IRouter, type Request, type Response } from 'express';
-import { ObjectNotFoundError, ObjectStorageService } from '../lib/objectStorage';
+
+import { ObjectPermission } from '../lib/objectAcl';
+import {
+  ObjectNotFoundError,
+  ObjectStorageService,
+} from '../lib/objectStorage';
 
 const router: IRouter = Router();
 const objectStorageService = new ObjectStorageService();
 
-// Store uploads in memory (files are streamed straight to Cloudinary).
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20 MB
-});
+function hasAuthenticatedSession(req: Request): boolean {
+  return !!(req.session as { userId?: number })?.userId;
+}
 
 /**
- * POST /storage/uploads
- * Upload a file directly to Cloudinary. Requires an active session.
- * Accepts multipart/form-data with:
- *   - file   : the binary file
- *   - name   : original filename
- *   - contentType : MIME type
- *   - size   : file size in bytes
+ * POST /storage/uploads/request-url
  *
- * Returns: { uploadURL, objectPath, metadata }
- *   uploadURL  — Cloudinary CDN URL (use this to display the image)
- *   objectPath — Cloudinary public_id (store this in your DB)
+ * Request a presigned URL for file upload.
+ * The client sends JSON metadata (name, size, contentType) — NOT the file.
+ * Then uploads the file directly to the returned presigned URL.
+ * Requires auth middleware so public callers cannot mint write-capable URLs.
  */
 router.post(
-  '/storage/uploads',
-  upload.single('file'),
+  '/storage/uploads/request-url',
   async (req: Request, res: Response) => {
-    if (!req.session.userId) {
+    if (!hasAuthenticatedSession(req)) {
       res.status(401).json({ error: 'Unauthorized' });
+
       return;
     }
 
-    if (!req.file) {
-      res.status(400).json({ error: 'No file provided' });
-      return;
-    }
-
-    const { name, contentType, size: rawSize } = req.body as Record<string, string>;
-    if (!name || !contentType || !rawSize) {
-      res.status(400).json({ error: 'Missing required fields: name, contentType, size' });
-      return;
-    }
-    const size = Number(rawSize);
-    if (!Number.isInteger(size) || size < 1) {
-      res.status(400).json({ error: 'size must be a positive integer' });
+    const parsed = RequestUploadUrlBody.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ error: 'Missing or invalid required fields' });
       return;
     }
 
     try {
-      const { uploadURL, objectPath } = await objectStorageService.uploadBuffer(
-        req.file.buffer,
-        { contentType },
-      );
+      const { name, size, contentType } = parsed.data;
 
-      res.json({ uploadURL, objectPath, metadata: { name, size, contentType } });
+      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
+      const objectPath =
+        objectStorageService.normalizeObjectEntityPath(uploadURL);
+
+      res.json(
+        RequestUploadUrlResponse.parse({
+          uploadURL,
+          objectPath,
+          metadata: { name, size, contentType },
+        }),
+      );
     } catch (error) {
-      console.error('Cloudinary upload error:', error);
-      res.status(500).json({ error: 'Failed to upload file' });
+      req.log.error({ err: error }, 'Error generating upload URL');
+      res.status(500).json({ error: 'Failed to generate upload URL' });
     }
   },
 );
 
 /**
- * GET /storage/objects/*objectPath
- * Serve a private uploaded object by its Cloudinary public_id or URL.
- * Requires session auth.
+ * GET /storage/public-objects/*
+ *
+ * Serve public assets from PUBLIC_OBJECT_SEARCH_PATHS.
+ * These are unconditionally public — no authentication or ACL checks.
+ * IMPORTANT: Always provide this endpoint when object storage is set up.
  */
-router.get('/storage/objects/*objectPath', async (req: Request, res: Response) => {
-  if (!req.session.userId) {
-    res.status(401).json({ error: 'Unauthorized' });
-    return;
-  }
+router.get(
+  '/storage/public-objects/*filePath',
+  async (req: Request, res: Response) => {
+    try {
+      const raw = req.params.filePath;
+      const filePath = Array.isArray(raw) ? raw.join('/') : raw;
+      const file = await objectStorageService.searchPublicObject(filePath);
+      if (!file) {
+        res.status(404).json({ error: 'File not found' });
+        return;
+      }
 
-  try {
-    const raw = req.params.objectPath;
-    const objectPath = Array.isArray(raw) ? raw.join('/') : raw;
+      const response = await objectStorageService.downloadObject(file);
 
-    const file = await objectStorageService.getObjectEntityFile(objectPath);
-    const response = await objectStorageService.downloadObject(file, 3600);
+      res.status(response.status);
+      response.headers.forEach((value, key) => res.setHeader(key, value));
 
-    const ct = response.headers.get('Content-Type');
-    if (ct) res.setHeader('Content-Type', ct);
-    const cc = response.headers.get('Cache-Control');
-    if (cc) res.setHeader('Cache-Control', cc);
-
-    const body = response.body;
-    if (!body) {
-      res.status(500).json({ error: 'Empty response body' });
-      return;
+      if (response.body) {
+        const nodeStream = Readable.fromWeb(
+          response.body as ReadableStream<Uint8Array>,
+        );
+        nodeStream.pipe(res);
+      } else {
+        res.end();
+      }
+    } catch (error) {
+      req.log.error({ err: error }, 'Error serving public object');
+      res.status(500).json({ error: 'Failed to serve public object' });
     }
+  },
+);
 
-    Readable.fromWeb(body as Parameters<typeof Readable.fromWeb>[0]).pipe(res);
+/**
+ * GET /storage/objects/*
+ *
+ * Serve object entities from PRIVATE_OBJECT_DIR.
+ * These are served from a separate path from /public-objects and can optionally
+ * be protected with authentication or ACL checks based on the use case.
+ */
+router.get('/storage/objects/*path', async (req: Request, res: Response) => {
+  try {
+    const raw = req.params.path;
+    const wildcardPath = Array.isArray(raw) ? raw.join('/') : raw;
+    const objectPath = `/objects/${wildcardPath}`;
+    const objectFile =
+      await objectStorageService.getObjectEntityFile(objectPath);
+
+    // --- Protected route example (uncomment when using replit-auth) ---
+    // if (!req.isAuthenticated()) {
+    //   res.status(401).json({ error: "Unauthorized" });
+    //   return;
+    // }
+    // const canAccess = await objectStorageService.canAccessObjectEntity({
+    //   userId: req.user.id,
+    //   objectFile,
+    //   requestedPermission: ObjectPermission.READ,
+    // });
+    // if (!canAccess) {
+    //   res.status(403).json({ error: "Forbidden" });
+    //   return;
+    // }
+
+    const response = await objectStorageService.downloadObject(objectFile);
+
+    res.status(response.status);
+    response.headers.forEach((value, key) => res.setHeader(key, value));
+
+    if (response.body) {
+      const nodeStream = Readable.fromWeb(
+        response.body as ReadableStream<Uint8Array>,
+      );
+      nodeStream.pipe(res);
+    } else {
+      res.end();
+    }
   } catch (error) {
     if (error instanceof ObjectNotFoundError) {
+      req.log.warn({ err: error }, 'Object not found');
       res.status(404).json({ error: 'Object not found' });
       return;
     }
-    console.error('Error serving object:', error);
+    req.log.error({ err: error }, 'Error serving object');
     res.status(500).json({ error: 'Failed to serve object' });
   }
 });

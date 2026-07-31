@@ -75,21 +75,44 @@ export default function CreateListing() {
     },
   });
 
+  const uploadFile = async (file: File): Promise<{ servingUrl: string; objectPath: string } | null> => {
+    const contentType = file.type || "application/octet-stream";
+    try {
+      // Step 1: request a presigned PUT URL
+      const metaRes = await fetch("/api/storage/uploads/request-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ name: file.name, size: file.size, contentType }),
+      });
+      if (!metaRes.ok) return null;
+      const { uploadURL, objectPath } = await metaRes.json() as { uploadURL: string; objectPath: string };
+
+      // Step 2: PUT the file bytes directly to GCS
+      const uploadRes = await fetch(uploadURL, {
+        method: "PUT",
+        body: file,
+        headers: { "Content-Type": contentType },
+      });
+      if (!uploadRes.ok) return null;
+
+      return { servingUrl: `/api/storage${objectPath}`, objectPath };
+    } catch {
+      return null;
+    }
+  };
+
   const handleDocumentUpload = async (files: FileList) => {
     setUploadingDocs(true);
     for (const file of Array.from(files)) {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("name", file.name);
-      form.append("contentType", file.type || "application/octet-stream");
-      form.append("size", String(file.size));
-      try {
-        const res = await fetch("/api/storage/uploads", { method: "POST", body: form, credentials: "include" });
-        if (res.ok) {
-          const { uploadURL } = await res.json() as { uploadURL: string };
-          setUploadedDocuments(prev => [...prev, { name: file.name, url: uploadURL, contentType: file.type || "application/octet-stream" }]);
-        }
-      } catch { /* skip */ }
+      const result = await uploadFile(file);
+      if (result) {
+        setUploadedDocuments(prev => [...prev, {
+          name: file.name,
+          url: result.servingUrl,
+          contentType: file.type || "application/octet-stream",
+        }]);
+      }
     }
     setUploadingDocs(false);
     if (docFileInputRef.current) docFileInputRef.current.value = "";
@@ -97,29 +120,12 @@ export default function CreateListing() {
 
   const handleImageUpload = async (files: FileList) => {
     setUploading(true);
-    const newUrls: string[] = [];
     for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) continue;
-      const form = new FormData();
-      form.append("file", file);
-      form.append("name", file.name);
-      form.append("contentType", file.type);
-      form.append("size", String(file.size));
-      try {
-        const res = await fetch("/api/storage/uploads", {
-          method: "POST",
-          body: form,
-          credentials: "include",
-        });
-        if (res.ok) {
-          const { uploadURL } = await res.json() as { uploadURL: string };
-          newUrls.push(uploadURL);
-        }
-      } catch { /* skip failed file */ }
+      const result = await uploadFile(file);
+      if (result) setUploadedImages(prev => [...prev, result.servingUrl]);
     }
-    setUploadedImages(prev => [...prev, ...newUrls]);
     setUploading(false);
-    // Reset input so same file can be re-selected
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
