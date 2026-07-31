@@ -212,6 +212,9 @@ router.delete("/:id", requireRole("agent"), async (req, res) => {
   if (existing.agentId !== req.session.userId) return res.status(403).json({ error: "Not your listing" });
   if (existing.status !== "draft") return res.status(400).json({ error: "Only draft listings can be deleted" });
 
+  // Delete any linked verifications first (a rejected listing returns to draft
+  // but its verification record remains, causing an FK violation on delete).
+  await db.delete(verificationsTable).where(eq(verificationsTable.listingId, id));
   await db.delete(listingsTable).where(eq(listingsTable.id, id));
   return res.json({ ok: true });
 });

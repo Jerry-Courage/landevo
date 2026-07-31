@@ -65,7 +65,7 @@ export default defineConfig({
     emptyOutDir: true,
   },
   optimizeDeps: {
-    exclude: ['@workspace/api-client-react', '@workspace/api-zod', '@workspace/db'],
+    exclude: ['@workspace/api-client-react', '@workspace/api-zod', '@workspace/db', '@workspace/object-storage-web'],
   },
   server: {
     port,
