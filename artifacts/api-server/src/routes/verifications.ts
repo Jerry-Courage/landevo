@@ -29,6 +29,19 @@ async function getVerification(id: number) {
       submittedAt: verificationsTable.submittedAt,
       reviewedAt: verificationsTable.reviewedAt,
       createdAt: verificationsTable.createdAt,
+      // Full listing details for the review page
+      listingDescription: listingsTable.description,
+      listingPrice: listingsTable.price,
+      listingLocation: listingsTable.location,
+      listingAddress: listingsTable.address,
+      listingCity: listingsTable.city,
+      listingState: listingsTable.state,
+      listingAreaSqm: listingsTable.areaSqm,
+      listingBedrooms: listingsTable.bedrooms,
+      listingBathrooms: listingsTable.bathrooms,
+      listingPropertyType: listingsTable.propertyType,
+      listingImages: listingsTable.images,
+      listingDocuments: listingsTable.documents,
     })
     .from(verificationsTable)
     .innerJoin(listingsTable, eq(verificationsTable.listingId, listingsTable.id))

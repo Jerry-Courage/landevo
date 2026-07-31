@@ -172,6 +172,33 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
     .set({ status: status as typeof transactionsTable.status._.data, updatedAt: new Date() })
     .where(eq(transactionsTable.id, id));
 
+  // Update listing status on terminal transitions
+  if (status === "completed") {
+    // Fetch the listing id from the transaction
+    const [txRow] = await db
+      .select({ listingId: transactionsTable.listingId })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.id, id));
+    if (txRow) {
+      await db
+        .update(listingsTable)
+        .set({ status: "sold", updatedAt: new Date() })
+        .where(eq(listingsTable.id, txRow.listingId));
+    }
+  } else if (status === "cancelled") {
+    const [txRow] = await db
+      .select({ listingId: transactionsTable.listingId })
+      .from(transactionsTable)
+      .where(eq(transactionsTable.id, id));
+    if (txRow) {
+      // Only revert to active if it's currently under_offer (guards against edge cases)
+      await db
+        .update(listingsTable)
+        .set({ status: "active", updatedAt: new Date() })
+        .where(and(eq(listingsTable.id, txRow.listingId), eq(listingsTable.status, "under_offer")));
+    }
+  }
+
   // Notify both parties
   const tx = await fetchTxById(id);
   if (tx) {

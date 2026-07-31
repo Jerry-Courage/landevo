@@ -32,10 +32,17 @@ function statusBadge(status: string) {
       </div>
     );
   }
-  if (status === "pending_verification" || status === "under_offer") {
+  if (status === "pending_verification") {
     return (
       <div className="flex items-center text-amber-600 bg-amber-50 w-fit px-2.5 py-1 rounded-md text-xs font-semibold">
-        <Clock className="w-3.5 h-3.5 mr-1.5" /> Pending Audit
+        <Clock className="w-3.5 h-3.5 mr-1.5" /> Pending Verification
+      </div>
+    );
+  }
+  if (status === "under_offer") {
+    return (
+      <div className="flex items-center text-blue-600 bg-blue-50 w-fit px-2.5 py-1 rounded-md text-xs font-semibold">
+        <Clock className="w-3.5 h-3.5 mr-1.5" /> Under Offer
       </div>
     );
   }

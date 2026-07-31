@@ -13,6 +13,7 @@ import Settings from '@/pages/settings';
 import AgentOffers from '@/pages/agent/offers';
 import NotFound from '@/pages/not-found';
 import CommissionSettings from '@/pages/commission/settings';
+import CommissionVerificationDetail from '@/pages/commission/verification-detail';
 
 // Admin Pages
 import AdminLogin from '@/pages/admin/login';
@@ -126,6 +127,7 @@ function Router() {
       <Route path="/commission/listings"      component={() => <CommissionRoute component={CommissionListings} />} />
       <Route path="/commission/audit"         component={() => <CommissionRoute component={CommissionAudit} />} />
       <Route path="/commission/settings"      component={() => <CommissionRoute component={CommissionSettings} />} />
+      <Route path="/commission/verifications/:id" component={() => <CommissionRoute component={CommissionVerificationDetail} />} />
 
       {/* System Admin Routes */}
       <Route path="/admin/login"        component={AdminLogin} />

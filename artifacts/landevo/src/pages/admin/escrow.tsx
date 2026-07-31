@@ -70,6 +70,14 @@ export default function AdminEscrow() {
     } finally { setActionPending(null); }
   };
 
+  const handleDispute = async (txId: number, rowId: string) => {
+    setActionPending(rowId);
+    try {
+      await fetch(`/api/admin/escrows/${txId}/dispute`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note: "Dispute flagged by admin" }) });
+      await fetchEscrows();
+    } finally { setActionPending(null); }
+  };
+
   const handleResolve = async (txId: number, rowId: string) => {
     setActionPending(rowId);
     try {
@@ -204,7 +212,13 @@ export default function AdminEscrow() {
                               </button>
                             )}
                             {e.status === "In Escrow" && (
-                              <span className="text-xs font-semibold" style={{ color: "rgba(255,255,255,0.4)" }}>Hold</span>
+                              <button onClick={() => handleDispute(e.transactionId, e.id)}
+                                disabled={actionPending === e.id}
+                                className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
+                                style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }}>
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                {actionPending === e.id ? "Flagging…" : "Flag Dispute"}
+                              </button>
                             )}
                             {(e.status === "Released" || e.status === "Refunded") && (
                               <span className="text-xs" style={{ color: "rgba(255,255,255,0.25)" }}>—</span>
@@ -273,9 +287,18 @@ export default function AdminEscrow() {
                       </button>
                     )}
                     {selectedEscrow.status === "In Escrow" && (
-                      <p className="text-xs text-center py-2" style={{ color: "rgba(255,255,255,0.3)" }}>
-                        Awaiting commission clearance before release is available.
-                      </p>
+                      <>
+                        <p className="text-xs py-1" style={{ color: "rgba(255,255,255,0.3)" }}>
+                          Awaiting commission clearance before release is available.
+                        </p>
+                        <button onClick={() => handleDispute(selectedEscrow.transactionId, selectedEscrow.id)}
+                          disabled={actionPending === selectedEscrow.id}
+                          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-bold transition-colors disabled:opacity-60 mt-1"
+                          style={{ background: "rgba(239,68,68,0.12)", color: "#f87171", border: "1px solid rgba(239,68,68,0.2)" }}>
+                          <AlertTriangle className="w-4 h-4" />
+                          {actionPending === selectedEscrow.id ? "Flagging…" : "Flag Dispute"}
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>

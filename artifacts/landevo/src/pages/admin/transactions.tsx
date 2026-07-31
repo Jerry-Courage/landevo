@@ -29,6 +29,7 @@ function toEscrowLabel(s: string) {
     case "verification_complete": return "Pending Release";
     case "escrow_opened":
     case "funds_deposited":       return "In Escrow";
+    case "disputed":              return "Disputed";
     default:                      return "In Escrow";
   }
 }
