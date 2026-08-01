@@ -102,7 +102,7 @@ export default function CommissionLayout({ children }: { children: React.ReactNo
         {/* Topbar */}
         <div className="h-14 bg-white border-b border-border flex items-center justify-between px-6 flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-3">
-            <span className="text-xs font-bold text-muted-foreground tracking-widest">NIGERIA LAND COMMISSION — DIGITAL REGISTRY</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-widest">GHANA LAND COMMISSION — DIGITAL REGISTRY</span>
           </div>
           <div className="flex items-center gap-3">
             <button className="relative p-2 rounded-md hover:bg-muted transition-colors">

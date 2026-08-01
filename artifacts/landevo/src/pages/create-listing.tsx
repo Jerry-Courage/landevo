@@ -485,7 +485,7 @@ export default function CreateListing() {
                 <CardContent className="p-6 md:p-8 space-y-4">
                   <div>
                     <h3 className="text-lg font-bold mb-1">Pricing</h3>
-                    <p className="text-sm text-muted-foreground mb-6">Set the asking price in Nigerian Naira (₦).</p>
+                    <p className="text-sm text-muted-foreground mb-6">Set the asking price in Ghanaian Cedi (₵).</p>
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold flex items-center">
