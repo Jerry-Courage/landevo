@@ -39,7 +39,7 @@ const statusConfig: Record<string, { bg: string; icon: React.ElementType; label:
 
 function fmt(d: string | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-NG", { month: "long", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-GH", { month: "long", day: "numeric", year: "numeric" });
 }
 
 export default function AgentKYC() {

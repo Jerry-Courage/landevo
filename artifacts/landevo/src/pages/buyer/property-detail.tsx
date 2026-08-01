@@ -25,9 +25,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" })
+  return new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS" })
     .format(n)
-    .replace("NGN", "₦");
+    .replace("GHS", "₵");
 }
 
 const TYPE_LABELS: Record<string, string> = {
@@ -188,7 +188,7 @@ export default function BuyerPropertyDetail() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-4 h-4" />
-                  Listed {new Date(listing.createdAt).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" })}
+                  Listed {new Date(listing.createdAt).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" })}
                 </span>
               </div>
             </div>
@@ -286,7 +286,7 @@ export default function BuyerPropertyDetail() {
                   <form onSubmit={handleSubmitOffer} className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-muted-foreground">
-                        YOUR OFFER AMOUNT (₦)
+                        YOUR OFFER AMOUNT (₵)
                       </label>
                       <Input
                         type="number"

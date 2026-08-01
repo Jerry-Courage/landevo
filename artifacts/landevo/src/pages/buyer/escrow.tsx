@@ -9,9 +9,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import type { Transaction } from "@workspace/api-client-react";
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" })
+  return new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS" })
     .format(n)
-    .replace("NGN", "₦");
+    .replace("GHS", "₵");
 }
 
 const STATUS_STEPS = [

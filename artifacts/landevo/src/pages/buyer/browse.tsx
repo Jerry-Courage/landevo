@@ -24,9 +24,9 @@ const GRADIENTS = [
 ];
 
 function formatCurrency(n: number) {
-  return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN" })
+  return new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS" })
     .format(n)
-    .replace("NGN", "₦");
+    .replace("GHS", "₵");
 }
 
 export default function BuyerBrowse() {
@@ -96,7 +96,7 @@ export default function BuyerBrowse() {
             {/* Price Range */}
             <div>
               <h4 className="font-semibold text-xs text-muted-foreground uppercase tracking-wider mb-3">
-                Price (₦)
+                Price (₵)
               </h4>
               <div className="flex items-center gap-2">
                 <Input
@@ -227,7 +227,7 @@ export default function BuyerBrowse() {
                 ))}
                 {(minPrice || maxPrice) && (
                   <span className="inline-flex items-center gap-1 bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full border border-primary/20">
-                    ₦{minPrice || "0"} – ₦{maxPrice || "∞"}
+                    ₵{minPrice || "0"} – ₵{maxPrice || "∞"}
                     <button
                       onClick={() => { setMinPrice(""); setMaxPrice(""); }}
                       className="ml-1 hover:text-destructive"

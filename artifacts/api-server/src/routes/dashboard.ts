@@ -192,7 +192,7 @@ function last6MonthLabels(): Array<{ label: string; year: number; month: number 
   for (let i = 5; i >= 0; i--) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     result.push({
-      label: d.toLocaleString("en-NG", { month: "short" }),
+      label: d.toLocaleString("en-GH", { month: "short" }),
       year: d.getFullYear(),
       month: d.getMonth() + 1, // 1-based
     });

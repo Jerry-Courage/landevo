@@ -68,13 +68,13 @@ function sortListings(listings: ReturnType<typeof useListListings>["data"], key:
 export default function Marketplace() {
   // filter state
   const [search,       setSearch]       = useState("");
-  const [minPrice,     setMinPrice]     = useState("");   // in millions ₦
-  const [maxPrice,     setMaxPrice]     = useState("");   // in millions ₦
+  const [minPrice,     setMinPrice]     = useState("");   // in millions ₵
+  const [maxPrice,     setMaxPrice]     = useState("");   // in millions ₵
   const [selectedTypes, setSelectedTypes] = useState<Set<PropertyType>>(new Set());
   const [sort,         setSort]         = useState<SortKey>("newest");
   const [showSortMenu, setShowSortMenu] = useState(false);
 
-  // build API params — price is stored in millions, API expects raw ₦
+  // build API params — price is stored in millions, API expects raw ₵
   const minPriceRaw = minPrice ? parseFloat(minPrice) * 1_000_000 : undefined;
   const maxPriceRaw = maxPrice ? parseFloat(maxPrice) * 1_000_000 : undefined;
 
@@ -147,7 +147,7 @@ export default function Marketplace() {
           <div className="space-y-8">
             {/* Price Range */}
             <div>
-              <h4 className="font-semibold text-sm mb-3">Price Range (Million ₦)</h4>
+              <h4 className="font-semibold text-sm mb-3">Price Range (Million ₵)</h4>
               <div className="flex items-center gap-2">
                 <Input
                   type="number"
@@ -169,8 +169,8 @@ export default function Marketplace() {
               </div>
               {(minPrice || maxPrice) && (
                 <p className="text-xs text-muted-foreground mt-2">
-                  {minPrice ? `₦${parseFloat(minPrice).toLocaleString()}M` : "Any"} –{" "}
-                  {maxPrice ? `₦${parseFloat(maxPrice).toLocaleString()}M` : "Any"}
+                  {minPrice ? `₵${parseFloat(minPrice).toLocaleString()}M` : "Any"} –{" "}
+                  {maxPrice ? `₵${parseFloat(maxPrice).toLocaleString()}M` : "Any"}
                 </p>
               )}
             </div>
@@ -299,7 +299,7 @@ export default function Marketplace() {
                 )}
                 {(minPrice || maxPrice) && (
                   <Badge variant="secondary" className="flex items-center gap-1 pr-1">
-                    Price: {minPrice ? `₦${minPrice}M` : "any"} – {maxPrice ? `₦${maxPrice}M` : "any"}
+                    Price: {minPrice ? `₵${minPrice}M` : "any"} – {maxPrice ? `₵${maxPrice}M` : "any"}
                     <button onClick={() => { setMinPrice(""); setMaxPrice(""); }} className="ml-1 hover:text-destructive"><X className="w-3 h-3" /></button>
                   </Badge>
                 )}

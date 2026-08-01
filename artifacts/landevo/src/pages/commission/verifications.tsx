@@ -33,7 +33,7 @@ function apiToUiStatus(s: string): FilterStatus {
 
 function fmt(d: string | Date | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function CommissionVerifications() {

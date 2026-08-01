@@ -10,9 +10,9 @@ import { motion } from "framer-motion";
 import { useGetAdminDashboard, useListTransactions } from "@workspace/api-client-react";
 
 function fmtAmt(n: number) {
-  if (n >= 1_000_000_000) return `₦ ${(n / 1_000_000_000).toFixed(2)}B`;
-  if (n >= 1_000_000)     return `₦ ${(n / 1_000_000).toFixed(1)}M`;
-  return `₦ ${n.toLocaleString()}`;
+  if (n >= 1_000_000_000) return `₵ ${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000)     return `₵ ${(n / 1_000_000).toFixed(1)}M`;
+  return `₵ ${n.toLocaleString()}`;
 }
 
 function txDisplayStatus(status: string) {
@@ -47,7 +47,7 @@ export default function AdminDashboard() {
   const volumeData         = (dashboard as any)?.volumeData         ?? [];
 
   const statCols = [
-    { label: "ESCROW VOLUME",        value: totalEscrowValue > 0 ? fmtAmt(totalEscrowValue) : "₦ —", sub: "Platform-wide",                     color: "text-indigo-400",  icon: Landmark },
+    { label: "ESCROW VOLUME",        value: totalEscrowValue > 0 ? fmtAmt(totalEscrowValue) : "₵ —", sub: "Platform-wide",                     color: "text-indigo-400",  icon: Landmark },
     { label: "ACTIVE TRANSACTIONS",  value: String(totalTransactions - completedTxns), sub: `${completedTxns} completed`, color: "text-emerald-400", icon: ArrowRightLeft },
     { label: "TOTAL USERS",          value: String(totalUsers), sub: `${totalAgents} agents · ${totalBuyers} buyers`, color: "text-sky-400",    icon: Users },
     { label: "TOTAL LISTINGS",       value: String(totalListings), sub: `${activeListings} active`,       color: "text-violet-400",  icon: Building2 },
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
             <div className="flex items-start justify-between mb-4">
               <div>
                 <p className="text-sm font-bold text-white">Transaction Volume Trend</p>
-                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>Monthly escrow value (₦B) — last 6 months</p>
+                <p className="text-xs mt-0.5" style={{ color: "rgba(255,255,255,0.35)" }}>Monthly escrow value (₵B) — last 6 months</p>
               </div>
               <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-full border border-indigo-500/20">LIVE</span>
             </div>
@@ -119,7 +119,7 @@ export default function AdminDashboard() {
                     <XAxis dataKey="m" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "rgba(255,255,255,0.3)" }} dy={8} />
                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "rgba(255,255,255,0.3)" }} />
                     <Tooltip contentStyle={{ background: "#1c1f2e", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 8, fontSize: 12, color: "#fff" }} cursor={{ stroke: "rgba(255,255,255,0.1)" }} />
-                    <Area type="monotone" dataKey="escrow" name="Escrow (₦B)" stroke="#6366f1" strokeWidth={2} fill="url(#gEscrow)" />
+                    <Area type="monotone" dataKey="escrow" name="Escrow (₵B)" stroke="#6366f1" strokeWidth={2} fill="url(#gEscrow)" />
                   </AreaChart>
                 </ResponsiveContainer>
               )}

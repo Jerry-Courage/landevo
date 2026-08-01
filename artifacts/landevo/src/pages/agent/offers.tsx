@@ -48,7 +48,7 @@ const FILTERS: FilterStatus[] = ["All", "Pending", "Accepted", "Rejected", "With
 
 function fmt(d: string | Date | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-NG", {
+  return new Date(d).toLocaleDateString("en-GH", {
     month: "short",
     day: "numeric",
     year: "numeric",

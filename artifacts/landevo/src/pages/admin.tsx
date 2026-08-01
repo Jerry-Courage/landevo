@@ -55,7 +55,7 @@ export default function Admin() {
           </Card>
           <Card className="shadow-sm">
             <CardContent className="p-5">
-              <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">ESCROW VOLUME (₦)</p>
+              <p className="text-[10px] font-bold text-muted-foreground tracking-wider mb-1">ESCROW VOLUME (₵)</p>
               <div className="flex items-end justify-between">
                 <h3 className="text-2xl font-bold">8.4B</h3>
                 <span className="text-xs font-bold text-red-600">-2.1%</span>
@@ -224,7 +224,7 @@ export default function Admin() {
                 <div className="flex flex-col">
                   <div className="p-3 border-b text-xs hover:bg-muted/30">
                     <span className="text-[10px] text-muted-foreground font-medium block mb-1">10:42 AM</span>
-                    <span className="font-medium">Listing Created by <span className="font-bold text-foreground">Sarah Mensah</span> on Plot 42, Lekki Ph 1</span>
+                    <span className="font-medium">Listing Created by <span className="font-bold text-foreground">Sarah Mensah</span> on Plot 42, East Legon Ph 1</span>
                   </div>
                   <div className="p-3 border-b text-xs hover:bg-muted/30 bg-primary/5">
                     <span className="text-[10px] text-muted-foreground font-medium block mb-1">10:40 AM</span>

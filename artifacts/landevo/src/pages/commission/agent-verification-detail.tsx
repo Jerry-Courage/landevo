@@ -44,7 +44,7 @@ const statusConfig: Record<VerifStatus, { bg: string; icon: React.ElementType; l
 
 function fmt(d: string | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(d).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 async function apiPatch(url: string, body?: object) {

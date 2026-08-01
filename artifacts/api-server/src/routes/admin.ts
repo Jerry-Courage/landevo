@@ -209,7 +209,7 @@ router.get("/escrows", requireRole("system_admin"), async (req, res) => {
       agent: r.agentName,
       value: parseFloat((r.agreedAmount ?? r.offerAmount) as string),
       status,
-      held: heldSince.toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" }),
+      held: heldSince.toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" }),
       commission: commissionStatus(r.status),
       daysHeld,
     };
@@ -358,7 +358,7 @@ router.get("/activity-logs", requireRole("system_admin"), async (req, res) => {
     action: r.action,
     target: r.targetLabel,
     type: r.targetType,
-    time: new Date(r.createdAt).toLocaleDateString("en-NG", {
+    time: new Date(r.createdAt).toLocaleDateString("en-GH", {
       month: "short", day: "numeric", year: "numeric",
       hour: "2-digit", minute: "2-digit",
     }),

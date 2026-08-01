@@ -58,7 +58,7 @@ router.get("/listings", requireRole("commission_admin"), async (req, res) => {
     type: r.propertyType ?? "Residential",
     size: r.areaSqm ? `${Number(r.areaSqm).toLocaleString()} sqm` : "—",
     value: parseFloat(r.price as string),
-    submitted: r.submittedAt ? new Date(r.submittedAt).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" }) : "—",
+    submitted: r.submittedAt ? new Date(r.submittedAt).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" }) : "—",
     status: auditStatus(r.status),
     notes: r.notes ?? "",
     documents: (r.documents as { name: string; url: string; contentType: string }[] | null) ?? [],
@@ -93,7 +93,7 @@ router.get("/audit", requireRole("commission_admin"), async (req, res) => {
     action:    r.action,
     target:    r.targetLabel,
     targetType: "listing",
-    timestamp: new Date(r.createdAt).toLocaleDateString("en-NG", {
+    timestamp: new Date(r.createdAt).toLocaleDateString("en-GH", {
       month: "short", day: "numeric", year: "numeric",
       hour: "2-digit", minute: "2-digit",
     }),

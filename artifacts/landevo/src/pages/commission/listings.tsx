@@ -44,8 +44,8 @@ const statusConfig: Record<string, { bg: string; label: string; icon: React.Elem
 const tabs: AuditStatus[] = ["All", "Awaiting Audit", "Under Review", "Approved", "Correction Required"];
 
 function formatCurrency(n: number) {
-  if (n >= 1_000_000) return `₦ ${(n / 1_000_000).toFixed(1)}M`;
-  return `₦ ${n.toLocaleString()}`;
+  if (n >= 1_000_000) return `₵ ${(n / 1_000_000).toFixed(1)}M`;
+  return `₵ ${n.toLocaleString()}`;
 }
 
 export default function CommissionListings() {

@@ -29,7 +29,7 @@ function timeAgo(date: string | null | undefined) {
   if (m < 60) return `${m}m`;
   const h = Math.floor(m / 60);
   if (h < 24) return `${h}h`;
-  return new Date(date).toLocaleDateString("en-NG", { month: "short", day: "numeric" });
+  return new Date(date).toLocaleDateString("en-GH", { month: "short", day: "numeric" });
 }
 
 function getOtherParticipant(thread: MessageThread, myId: number) {
@@ -278,7 +278,7 @@ export default function BuyerMessages() {
                           {msg.content}
                         </div>
                         <span className="text-[10px] text-muted-foreground font-medium mt-1 block mx-1">
-                          {new Date(msg.createdAt).toLocaleTimeString("en-NG", {
+                          {new Date(msg.createdAt).toLocaleTimeString("en-GH", {
                             hour: "2-digit",
                             minute: "2-digit",
                           })}

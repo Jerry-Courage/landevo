@@ -113,7 +113,7 @@ export default function Login() {
             "Landevo has reduced our verification turnaround time by 65% across three major commissions."
           </p>
           <p className="mt-2 text-sm text-sidebar-foreground/60 font-semibold tracking-wider">
-            — DIRECTOR OF LAND SERVICES, LAGOS STATE
+            — DIRECTOR OF LAND SERVICES, GREATER ACCRA REGION
           </p>
         </div>
       </div>

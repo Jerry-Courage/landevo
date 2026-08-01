@@ -20,15 +20,15 @@ import {
 
 function fmt(d: string | Date | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  return new Date(d).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric", hour: "2-digit", minute: "2-digit" });
 }
 
 function fmtPrice(p: string | number | null | undefined) {
   if (p == null) return "—";
   const n = typeof p === "string" ? parseFloat(p) : p;
-  if (n >= 1_000_000_000) return `₦ ${(n / 1_000_000_000).toFixed(2)}B`;
-  if (n >= 1_000_000) return `₦ ${(n / 1_000_000).toFixed(1)}M`;
-  return `₦ ${n.toLocaleString()}`;
+  if (n >= 1_000_000_000) return `₵ ${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000) return `₵ ${(n / 1_000_000).toFixed(1)}M`;
+  return `₵ ${n.toLocaleString()}`;
 }
 
 const statusConfig: Record<string, { bg: string; icon: React.ElementType; label: string }> = {

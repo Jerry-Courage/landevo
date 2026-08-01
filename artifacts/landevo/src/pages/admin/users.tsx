@@ -35,7 +35,7 @@ const tabLabels: Record<RoleFilter, string> = {
 };
 
 function fmt(d: string) {
-  return new Date(d).toLocaleDateString("en-NG", { month: "short", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-GH", { month: "short", year: "numeric" });
 }
 
 export default function AdminUsers() {

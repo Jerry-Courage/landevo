@@ -309,7 +309,7 @@ export default function PropertyDetail() {
                     ) : property.status === "active" || property.status === "verified" ? (
                       <div className="space-y-3">
                         <div>
-                          <p className="text-xs font-semibold text-muted-foreground mb-1">YOUR OFFER AMOUNT (₦)</p>
+                          <p className="text-xs font-semibold text-muted-foreground mb-1">YOUR OFFER AMOUNT (₵)</p>
                           <Input
                             type="number"
                             placeholder={String(property.price)}
@@ -348,7 +348,7 @@ export default function PropertyDetail() {
                     <div className="mt-6 pt-5 border-t space-y-3">
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Verification Fee</span>
-                        <span className="font-semibold text-foreground">₦ 25,000</span>
+                        <span className="font-semibold text-foreground">₵ 25,000</span>
                       </div>
                       <div className="flex justify-between items-center text-sm">
                         <span className="text-muted-foreground">Comm. Approval</span>

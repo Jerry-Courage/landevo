@@ -6,14 +6,14 @@ import { useListTransactions } from "@workspace/api-client-react";
 type TxnStatus = "All" | "Completed" | "In Progress" | "Cancelled";
 
 function fmtAmt(n: number) {
-  if (n >= 1_000_000_000) return `₦ ${(n / 1_000_000_000).toFixed(2)}B`;
-  if (n >= 1_000_000)     return `₦ ${(n / 1_000_000).toFixed(1)}M`;
-  return `₦ ${n.toLocaleString()}`;
+  if (n >= 1_000_000_000) return `₵ ${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000)     return `₵ ${(n / 1_000_000).toFixed(1)}M`;
+  return `₵ ${n.toLocaleString()}`;
 }
 
 function fmtDate(d: string | Date | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" });
 }
 
 function toDisplayStatus(s: string): TxnStatus {

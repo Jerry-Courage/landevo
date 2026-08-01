@@ -65,7 +65,7 @@ function offerStatusBadge(status: string) {
 
 function fmt(d: string | Date | null | undefined) {
   if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-NG", { month: "short", day: "numeric", year: "numeric" });
+  return new Date(d).toLocaleDateString("en-GH", { month: "short", day: "numeric", year: "numeric" });
 }
 
 export default function Dashboard() {
@@ -250,7 +250,7 @@ export default function Dashboard() {
                     <TableRow className="bg-muted/30">
                       <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">PROPERTY</TableHead>
                       <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">BUYER</TableHead>
-                      <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground text-right">AMOUNT (₦)</TableHead>
+                      <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground text-right">AMOUNT (₵)</TableHead>
                       <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">STATUS</TableHead>
                       <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">DATE</TableHead>
                       <TableHead className="w-[120px]"></TableHead>
@@ -316,7 +316,7 @@ export default function Dashboard() {
                   <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">REF ID</TableHead>
                   <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">PROPERTY</TableHead>
                   <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">DIMENSION</TableHead>
-                  <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground text-right">PRICE (₦)</TableHead>
+                  <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground text-right">PRICE (₵)</TableHead>
                   <TableHead className="font-semibold text-xs tracking-wider text-muted-foreground">STATUS</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>

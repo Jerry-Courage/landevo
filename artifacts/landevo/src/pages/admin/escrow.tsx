@@ -24,9 +24,9 @@ interface EscrowRow {
 const tabs: EscrowStatus[] = ["All", "In Escrow", "Pending Release", "Released", "Disputed", "Refunded"];
 
 function fmt(n: number) {
-  if (n >= 1_000_000_000) return `₦ ${(n / 1_000_000_000).toFixed(2)}B`;
-  if (n >= 1_000_000) return `₦ ${(n / 1_000_000).toFixed(1)}M`;
-  return `₦ ${n.toLocaleString()}`;
+  if (n >= 1_000_000_000) return `₵ ${(n / 1_000_000_000).toFixed(2)}B`;
+  if (n >= 1_000_000) return `₵ ${(n / 1_000_000).toFixed(1)}M`;
+  return `₵ ${n.toLocaleString()}`;
 }
 
 function statusStyle(s: string) {

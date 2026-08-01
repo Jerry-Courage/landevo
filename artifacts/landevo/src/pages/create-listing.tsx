@@ -260,7 +260,7 @@ export default function CreateListing() {
                       <Input
                         value={title}
                         onChange={e => setTitle(e.target.value)}
-                        placeholder="e.g. 2,500 sqm Commercial Plot, Victoria Island"
+                        placeholder="e.g. 2,500 sqm Commercial Plot, Cantonments"
                         className="h-10"
                         required
                       />
@@ -339,18 +339,18 @@ export default function CreateListing() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-sm font-semibold flex items-center">City / LGA <span className="text-destructive ml-1">*</span></label>
-                        <Input value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. Victoria Island" className="h-10" required />
+                        <Input value={city} onChange={e => setCity(e.target.value)} placeholder="e.g. East Legon" className="h-10" required />
                       </div>
                       <div className="space-y-2">
-                        <label className="text-sm font-semibold flex items-center">State <span className="text-destructive ml-1">*</span></label>
-                        <Input value={state} onChange={e => setState(e.target.value)} placeholder="e.g. Lagos" className="h-10" required />
+                        <label className="text-sm font-semibold flex items-center">Region <span className="text-destructive ml-1">*</span></label>
+                        <Input value={state} onChange={e => setState(e.target.value)} placeholder="e.g. Greater Accra" className="h-10" required />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-semibold flex items-center">
                         Location Description <span className="text-destructive ml-1">*</span>
                       </label>
-                      <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. Victoria Island, Lagos — near Eko Hotel" className="h-10" required />
+                      <Input value={location} onChange={e => setLocation(e.target.value)} placeholder="e.g. East Legon, Accra — near Accra Mall" className="h-10" required />
                     </div>
                   </div>
                 </CardContent>
@@ -489,7 +489,7 @@ export default function CreateListing() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-semibold flex items-center">
-                      Asking Price (₦) <span className="text-destructive ml-1">*</span>
+                      Asking Price (₵) <span className="text-destructive ml-1">*</span>
                     </label>
                     <Input
                       type="number" min="0"
@@ -539,7 +539,7 @@ export default function CreateListing() {
                     <div>
                       <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider">Asking Price</p>
                       <p className="font-semibold mt-0.5 text-primary">
-                        {price ? `₦${parseFloat(price).toLocaleString()}` : "—"}
+                        {price ? `₵${parseFloat(price).toLocaleString()}` : "—"}
                       </p>
                     </div>
                     {uploadedImages.length > 0 && (

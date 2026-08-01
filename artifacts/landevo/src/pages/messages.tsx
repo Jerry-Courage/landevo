@@ -236,7 +236,7 @@ export default function Messages() {
                         </div>
                         <div className="flex items-center justify-end gap-1 mt-1 mr-1">
                           <span className="text-[10px] text-muted-foreground font-medium">
-                            {new Date(msg.createdAt).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(msg.createdAt).toLocaleTimeString('en-GH', { hour: '2-digit', minute: '2-digit' })}
                           </span>
                           {msg.readAt && <span className="text-[10px] text-primary font-bold">✓✓</span>}
                         </div>
@@ -252,7 +252,7 @@ export default function Messages() {
                           {msg.content}
                         </div>
                         <span className="text-[10px] text-muted-foreground font-medium ml-1 mt-1 block">
-                          {new Date(msg.createdAt).toLocaleTimeString('en-NG', { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(msg.createdAt).toLocaleTimeString('en-GH', { hour: '2-digit', minute: '2-digit' })}
                         </span>
                       </div>
                     </div>
