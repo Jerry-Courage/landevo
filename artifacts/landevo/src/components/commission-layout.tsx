@@ -2,7 +2,7 @@ import React from "react";
 import { Link, useLocation } from "wouter";
 import {
   Shield, LayoutDashboard, ShieldCheck, Building2,
-  FileText, LogOut, Bell, Settings,
+  FileText, LogOut, Bell, Settings, ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/use-auth";
 const NAV_ITEMS: { path: string; label: string; icon: React.ElementType; exact?: boolean; badge?: number }[] = [
   { path: "/commission", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { path: "/commission/verifications", label: "Agent Verifications", icon: ShieldCheck },
+  { path: "/commission/listing-verifications", label: "Listing Verifications", icon: ClipboardList },
   { path: "/commission/listings", label: "Listing Audits", icon: Building2 },
   { path: "/commission/audit", label: "Activity Log", icon: FileText },
   { path: "/commission/settings", label: "Settings", icon: Settings },

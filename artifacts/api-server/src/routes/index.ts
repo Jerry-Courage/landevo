@@ -10,6 +10,7 @@ import notificationsRouter from "./notifications";
 import dashboardRouter from "./dashboard";
 import adminRouter from "./admin";
 import commissionRouter from "./commission";
+import agentVerificationsRouter from "./agent-verifications";
 import storageRouter from "./storage";
 import eventsRouter from "./events";
 import usersRouter from "./users";
@@ -27,6 +28,7 @@ router.use("/notifications", notificationsRouter);
 router.use("/dashboard", dashboardRouter);
 router.use("/admin", adminRouter);
 router.use("/commission", commissionRouter);
+router.use("/agent-verifications", agentVerificationsRouter);
 router.use("/users", usersRouter);
 router.use("/", storageRouter);              // /storage/uploads/request-url, /storage/objects/*, /storage/public-objects/*
 router.use("/", eventsRouter);               // /events (SSE)

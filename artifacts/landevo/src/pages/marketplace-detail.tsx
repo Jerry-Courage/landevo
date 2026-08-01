@@ -375,10 +375,12 @@ export default function PropertyDetail() {
                       <div>
                         <h4 className="font-bold text-base">{property.agentName || 'Agent'}</h4>
                         <p className="text-xs text-muted-foreground font-medium">Land Consultant</p>
-                        <div className="flex items-center gap-1 mt-1">
-                          <ShieldCheck className="w-3 h-3 text-primary" />
-                          <span className="text-[10px] font-bold text-primary tracking-wider">VERIFIED AGENT</span>
-                        </div>
+                        {(property as any).agentIsVerified && (
+                          <div className="flex items-center gap-1 mt-1">
+                            <ShieldCheck className="w-3 h-3 text-primary" />
+                            <span className="text-[10px] font-bold text-primary tracking-wider">VERIFIED AGENT</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     

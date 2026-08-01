@@ -14,6 +14,9 @@ import AgentOffers from '@/pages/agent/offers';
 import NotFound from '@/pages/not-found';
 import CommissionSettings from '@/pages/commission/settings';
 import CommissionVerificationDetail from '@/pages/commission/verification-detail';
+import AgentVerifications from '@/pages/commission/agent-verifications';
+import AgentVerificationDetail from '@/pages/commission/agent-verification-detail';
+import AgentKYC from '@/pages/agent/kyc';
 
 // Admin Pages
 import AdminLogin from '@/pages/admin/login';
@@ -105,6 +108,7 @@ function Router() {
       <Route path="/marketplace/:id"   component={() => <AgentRoute component={PropertyDetail} />} />
       <Route path="/listings/create"   component={() => <AgentRoute component={CreateListing} />} />
       <Route path="/offers"             component={() => <AgentRoute component={AgentOffers} />} />
+      <Route path="/kyc"               component={() => <AgentRoute component={AgentKYC} />} />
       <Route path="/verification"      component={() => <AgentRoute component={Verification} />} />
       <Route path="/transactions"      component={() => <AgentRoute component={Transactions} />} />
       <Route path="/messages"          component={() => <AgentRoute component={Messages} />} />
@@ -123,11 +127,15 @@ function Router() {
 
       {/* Land Commission Routes */}
       <Route path="/commission"               component={() => <CommissionRoute component={CommissionDashboard} />} />
-      <Route path="/commission/verifications" component={() => <CommissionRoute component={CommissionVerifications} />} />
+      {/* Agent KYC verification */}
+      <Route path="/commission/verifications"     component={() => <CommissionRoute component={AgentVerifications} />} />
+      <Route path="/commission/verifications/:id" component={() => <CommissionRoute component={AgentVerificationDetail} />} />
+      {/* Listing verification queue */}
+      <Route path="/commission/listing-verifications"     component={() => <CommissionRoute component={CommissionVerifications} />} />
+      <Route path="/commission/listing-verifications/:id" component={() => <CommissionRoute component={CommissionVerificationDetail} />} />
       <Route path="/commission/listings"      component={() => <CommissionRoute component={CommissionListings} />} />
       <Route path="/commission/audit"         component={() => <CommissionRoute component={CommissionAudit} />} />
       <Route path="/commission/settings"      component={() => <CommissionRoute component={CommissionSettings} />} />
-      <Route path="/commission/verifications/:id" component={() => <CommissionRoute component={CommissionVerificationDetail} />} />
 
       {/* System Admin Routes */}
       <Route path="/admin/login"        component={AdminLogin} />

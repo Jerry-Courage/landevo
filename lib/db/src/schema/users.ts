@@ -11,6 +11,7 @@ export const usersTable = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: userRoleEnum("role").notNull().default("buyer"),
   isActive: boolean("is_active").notNull().default(true),
+  isVerified: boolean("is_verified").notNull().default(false),
   notificationPreferences: json("notification_preferences").$type<Record<string, boolean>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });

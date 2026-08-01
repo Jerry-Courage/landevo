@@ -61,13 +61,13 @@ export default function VerificationDetail() {
 
   async function handleApprove() {
     await approve.mutateAsync({ verificationId, data: { notes: approveNotes || undefined } });
-    navigate("/commission/verifications");
+    navigate("/commission/listing-verifications");
   }
 
   async function handleReject() {
     if (!rejectNotes.trim()) return;
     await reject.mutateAsync({ verificationId, data: { notes: rejectNotes } });
-    navigate("/commission/verifications");
+    navigate("/commission/listing-verifications");
   }
 
   if (isLoading) {
@@ -87,8 +87,8 @@ export default function VerificationDetail() {
           <div className="flex flex-col items-center gap-3 py-16 text-muted-foreground">
             <AlertCircle className="w-10 h-10 opacity-30" />
             <p className="text-sm font-medium">Verification not found or access denied.</p>
-            <Button variant="ghost" size="sm" onClick={() => navigate("/commission/verifications")}>
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to queue
+            <Button variant="ghost" size="sm" onClick={() => navigate("/commission/listing-verifications")}>
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to listing queue
             </Button>
           </div>
         </div>
@@ -108,7 +108,7 @@ export default function VerificationDetail() {
         {/* Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-4">
-            <Button variant="ghost" size="icon" className="mt-0.5 flex-shrink-0" onClick={() => navigate("/commission/verifications")}>
+            <Button variant="ghost" size="icon" className="mt-0.5 flex-shrink-0" onClick={() => navigate("/commission/listing-verifications")}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
             <div>

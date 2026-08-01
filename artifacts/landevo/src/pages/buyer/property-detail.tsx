@@ -365,6 +365,12 @@ export default function BuyerPropertyDetail() {
                   <div>
                     <h4 className="font-bold text-sm">{listing.agentName}</h4>
                     <p className="text-xs text-muted-foreground">Agent</p>
+                    {(listing as any).agentIsVerified && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <svg className="w-3 h-3 text-emerald-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
+                        <span className="text-[10px] font-bold text-emerald-600 tracking-wider">VERIFIED AGENT</span>
+                      </div>
+                    )}
                   </div>
                 </div>
                 {user && user.id !== listing.agentId && (

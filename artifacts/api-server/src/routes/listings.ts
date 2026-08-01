@@ -12,6 +12,7 @@ function listingSelect() {
     id: listingsTable.id,
     agentId: listingsTable.agentId,
     agentName: usersTable.name,
+    agentIsVerified: usersTable.isVerified,
     title: listingsTable.title,
     description: listingsTable.description,
     price: listingsTable.price,

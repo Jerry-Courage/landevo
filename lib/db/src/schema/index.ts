@@ -7,3 +7,4 @@ export * from "./transactions";
 export * from "./messages";
 export * from "./notifications";
 export * from "./activity-logs";
+export * from "./agent-verifications";
